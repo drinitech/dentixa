@@ -20,11 +20,12 @@ function toQueryString(params: ListParams) {
   return s ? `?${s}` : "";
 }
 
-export function useAppointments(params: ListParams = {}, options?: { admin?: boolean }) {
+export function useAppointments(params: ListParams = {}, options?: { admin?: boolean; enabled?: boolean }) {
   const path = options?.admin ? "/admin/appointments" : "/appointments";
   return useQuery({
     queryKey: [options?.admin ? "admin-appointments" : "appointments", params],
     queryFn: () => apiFetch<{ appointments: Appointment[] }>(`${path}${toQueryString(params)}`),
+    enabled: options?.enabled ?? true,
   });
 }
 

@@ -6,7 +6,7 @@ import { CalendarX2 } from "lucide-react";
 import { PageHeader } from "@/components/common/page-header";
 import { EmptyState } from "@/components/common/empty-state";
 import { PageLoading } from "@/components/common/loading-spinner";
-import { AppointmentCard } from "@/components/appointments/appointment-card";
+import { AppointmentsTable } from "@/components/admin/appointments-table";
 import { Select } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { useAppointments, useCancelAppointment } from "@/hooks/use-appointments";
@@ -63,17 +63,11 @@ export default function AdminAppointmentsPage() {
       {isLoading ? (
         <PageLoading />
       ) : data && data.appointments.length > 0 ? (
-        <div className="space-y-3">
-          {data.appointments.map((appt) => (
-            <AppointmentCard
-              key={appt.id}
-              appointment={appt}
-              onCancel={handleCancel}
-              cancelling={cancelAppointment.isPending}
-              showPatient
-            />
-          ))}
-        </div>
+        <AppointmentsTable
+          appointments={data.appointments}
+          onCancel={handleCancel}
+          cancelling={cancelAppointment.isPending}
+        />
       ) : (
         <EmptyState icon={CalendarX2} title="No appointments match these filters" />
       )}

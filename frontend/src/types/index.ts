@@ -68,6 +68,7 @@ export interface AdminUser {
   email: string;
   role: Role;
   phone: string | null;
+  avatarUrl: string | null;
   isActive: boolean;
   createdAt: string;
 }

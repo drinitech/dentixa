@@ -9,6 +9,7 @@ import { PageLoading } from "@/components/common/loading-spinner";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { DoctorForm } from "@/components/admin/doctor-form";
+import { Avatar } from "@/components/common/avatar";
 import { useAdminDoctors, useUpdateDoctor } from "@/hooks/use-admin";
 import { ApiError } from "@/lib/api-client";
 
@@ -46,9 +47,12 @@ export default function AdminDoctorsPage() {
           {data.doctors.map((doctor) => (
             <Card key={doctor.id}>
               <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <p className="text-sm font-medium text-foreground">{doctor.name}</p>
-                  <p className="text-sm text-muted-foreground">{doctor.email}</p>
+                <div className="flex items-center gap-3">
+                  <Avatar src={doctor.avatarUrl} name={doctor.name} size="sm" />
+                  <div>
+                    <p className="text-sm font-medium text-foreground">{doctor.name}</p>
+                    <p className="text-sm text-muted-foreground">{doctor.email}</p>
+                  </div>
                 </div>
                 <div className="flex items-center gap-3">
                   <span

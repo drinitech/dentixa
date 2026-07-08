@@ -9,6 +9,18 @@ import type { CreateDoctorInput, UpdateDoctorInput, ListUsersQuery } from "../va
 
 const SALT_ROUNDS = 12;
 
+// Never select passwordHash (or tokenVersion) into anything returned to the frontend.
+const PUBLIC_USER_SELECT = {
+  id: true,
+  name: true,
+  email: true,
+  role: true,
+  phone: true,
+  avatarUrl: true,
+  isActive: true,
+  createdAt: true,
+} satisfies Prisma.UserSelect;
+
 export async function createDoctor(input: CreateDoctorInput) {
   const existing = await prisma.user.findUnique({ where: { email: input.email } });
   if (existing) throw new BadRequestError("An account with this email already exists");
@@ -16,13 +28,18 @@ export async function createDoctor(input: CreateDoctorInput) {
   const passwordHash = await bcrypt.hash(input.password, SALT_ROUNDS);
   const doctor = await prisma.user.create({
     data: { name: input.name, email: input.email, passwordHash, phone: input.phone, role: "DOCTOR" },
+    select: PUBLIC_USER_SELECT,
   });
   await seedDefaultNotificationPreferences(doctor.id);
   return doctor;
 }
 
 export async function listDoctors() {
-  return prisma.user.findMany({ where: { role: "DOCTOR" }, orderBy: { name: "asc" } });
+  return prisma.user.findMany({
+    where: { role: "DOCTOR" },
+    orderBy: { name: "asc" },
+    select: PUBLIC_USER_SELECT,
+  });
 }
 
 export async function updateDoctor(id: string, input: UpdateDoctorInput) {
@@ -36,6 +53,7 @@ export async function updateDoctor(id: string, input: UpdateDoctorInput) {
       // Deactivating a doctor must also invalidate any refresh tokens already issued to them.
       ...(input.isActive === false ? { tokenVersion: { increment: 1 } } : {}),
     },
+    select: PUBLIC_USER_SELECT,
   });
 }
 
@@ -56,15 +74,7 @@ export async function listUsers(query: ListUsersQuery) {
       orderBy: { createdAt: "desc" },
       skip: (query.page - 1) * query.pageSize,
       take: query.pageSize,
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        role: true,
-        phone: true,
-        isActive: true,
-        createdAt: true,
-      },
+      select: PUBLIC_USER_SELECT,
     }),
     prisma.user.count({ where }),
   ]);
@@ -80,6 +90,7 @@ export async function setUserActive(id: string, isActive: boolean) {
   return prisma.user.update({
     where: { id },
     data: { isActive, tokenVersion: { increment: 1 } },
+    select: PUBLIC_USER_SELECT,
   });
 }
 
