@@ -43,6 +43,9 @@ model User {
   passwordHash String
   role         Role     @default(PATIENT)
   phone        String?
+  // Stored as a data: URI (small, resized client-side before upload) rather
+  // than a filesystem path — Render's disk isn't persisted across deploys.
+  avatarUrl    String?  @db.Text
   isActive     Boolean  @default(true)
   // Bumped on ban / password reset so previously issued refresh tokens
   // are invalidated immediately without a server-side token blacklist table.

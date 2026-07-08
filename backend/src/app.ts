@@ -16,7 +16,9 @@ export function createApp() {
       credentials: true,
     }),
   );
-  app.use(express.json());
+  // Default 100kb is too small for a profile-picture data URI; images are
+  // resized client-side first, so 3mb comfortably covers it either way.
+  app.use(express.json({ limit: "3mb" }));
   app.use(cookieParser());
 
   app.get("/health", (_req, res) => res.json({ status: "ok" }));

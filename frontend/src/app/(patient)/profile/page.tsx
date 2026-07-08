@@ -8,6 +8,7 @@ import { Switch } from "@/components/ui/switch";
 import { PageLoading } from "@/components/common/loading-spinner";
 import { EmptyState } from "@/components/common/empty-state";
 import { AppointmentCard } from "@/components/appointments/appointment-card";
+import { AvatarUpload } from "@/components/common/avatar-upload";
 import { useAuth } from "@/lib/auth-context";
 import { useNotificationPreferences, useUpdateNotificationPreferences } from "@/hooks/use-notification-preferences";
 import { useAppointments } from "@/hooks/use-appointments";
@@ -22,7 +23,7 @@ const RELEVANT_EVENTS: NotificationEventType[] = ["APPOINTMENT_APPROVED", "APPOI
 const CHANNELS: NotificationChannel[] = ["EMAIL", "SMS"];
 
 export default function ProfilePage() {
-  const { user } = useAuth();
+  const { user, patchUser } = useAuth();
   const { data, isLoading } = useNotificationPreferences();
   const update = useUpdateNotificationPreferences();
   const { data: historyData, isLoading: historyLoading } = useAppointments({ to: new Date().toISOString().slice(0, 10) });
@@ -44,6 +45,18 @@ export default function ProfilePage() {
   return (
     <div className="space-y-6">
       <PageHeader title="Profile" description={`Signed in as ${user?.email}`} />
+
+      {user && (
+        <Card>
+          <CardContent className="flex items-center gap-5 pt-5">
+            <AvatarUpload src={user.avatarUrl} name={user.name} onUploaded={(avatarUrl) => patchUser({ avatarUrl })} />
+            <div>
+              <p className="text-sm font-medium text-foreground">{user.name}</p>
+              <p className="text-sm text-muted-foreground">{user.email}</p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardHeader>

@@ -22,8 +22,22 @@ function setRefreshCookie(res: Response, token: string) {
   });
 }
 
-function serializeUser(user: { id: string; name: string; email: string; role: string; phone: string | null }) {
-  return { id: user.id, name: user.name, email: user.email, role: user.role, phone: user.phone };
+function serializeUser(user: {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  phone: string | null;
+  avatarUrl?: string | null;
+}) {
+  return {
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    role: user.role,
+    phone: user.phone,
+    avatarUrl: user.avatarUrl ?? null,
+  };
 }
 
 export const registerHandler = asyncHandler(async (req: Request, res: Response) => {

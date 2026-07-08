@@ -11,3 +11,8 @@ export const updateNotificationPreferencesHandler = asyncHandler(async (req: Req
   const preferences = await userService.updateNotificationPreferences(req.user!.id, req.body);
   res.json({ preferences });
 });
+
+export const updateAvatarHandler = asyncHandler(async (req: Request, res: Response) => {
+  const user = await userService.updateAvatar(req.user!.id, req.body.avatarUrl);
+  res.json({ user });
+});

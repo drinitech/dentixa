@@ -1,10 +1,11 @@
 import { Router } from "express";
 import { authenticate } from "../middleware/authenticate";
 import { validate } from "../middleware/validate";
-import { updateNotificationPreferencesSchema } from "../validations/user.schema";
+import { updateNotificationPreferencesSchema, updateAvatarSchema } from "../validations/user.schema";
 import {
   getNotificationPreferencesHandler,
   updateNotificationPreferencesHandler,
+  updateAvatarHandler,
 } from "../controllers/user.controller";
 
 export const userRouter = Router();
@@ -17,3 +18,4 @@ userRouter.patch(
   validate(updateNotificationPreferencesSchema),
   updateNotificationPreferencesHandler,
 );
+userRouter.patch("/me/avatar", validate(updateAvatarSchema), updateAvatarHandler);

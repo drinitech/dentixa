@@ -12,6 +12,7 @@ export const doctorNav: NavItem[] = [
   { label: "Calendar", href: "/doctor/calendar", icon: CalendarDays },
   { label: "Schedule", href: "/doctor/schedule", icon: Stethoscope },
   { label: "Stats", href: "/doctor/stats", icon: BarChart3 },
+  { label: "Profile", href: "/doctor/profile", icon: UserCog },
 ];
 
 export const adminNav: NavItem[] = [

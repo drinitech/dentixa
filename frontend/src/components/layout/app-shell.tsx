@@ -7,6 +7,7 @@ import { LogOut, Menu, X, type LucideIcon } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { Avatar } from "@/components/common/avatar";
 
 export interface NavItem {
   label: string;
@@ -65,9 +66,12 @@ export function AppShell({
           })}
         </nav>
         <div className="border-t border-border p-3">
-          <div className="mb-2 rounded-lg bg-muted px-3 py-2">
-            <p className="truncate text-sm font-medium text-foreground">{user?.name}</p>
-            <p className="text-xs text-muted-foreground">{roleLabel}</p>
+          <div className="mb-2 flex items-center gap-2.5 rounded-lg bg-muted px-3 py-2">
+            <Avatar src={user?.avatarUrl} name={user?.name ?? "?"} size="sm" />
+            <div className="min-w-0">
+              <p className="truncate text-sm font-medium text-foreground">{user?.name}</p>
+              <p className="text-xs text-muted-foreground">{roleLabel}</p>
+            </div>
           </div>
           <button
             onClick={handleLogout}

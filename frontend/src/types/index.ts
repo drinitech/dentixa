@@ -13,6 +13,7 @@ export interface User {
   email: string;
   role: Role;
   phone: string | null;
+  avatarUrl: string | null;
 }
 
 export interface ClinicService {
@@ -27,6 +28,7 @@ export interface DoctorSummary {
   id: string;
   name: string;
   email: string;
+  avatarUrl: string | null;
 }
 
 export interface DoctorScheduleWindow {

@@ -13,3 +13,11 @@ export const updateNotificationPreferencesSchema = z.object({
     .max(20),
 });
 export type UpdateNotificationPreferencesInput = z.infer<typeof updateNotificationPreferencesSchema>;
+
+export const updateAvatarSchema = z.object({
+  avatarUrl: z
+    .string()
+    .max(2_000_000, "Image is too large")
+    .refine((v) => /^data:image\/(png|jpeg|jpg|webp);base64,/.test(v), "Must be a PNG, JPEG, or WEBP image"),
+});
+export type UpdateAvatarInput = z.infer<typeof updateAvatarSchema>;
