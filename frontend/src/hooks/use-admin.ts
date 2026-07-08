@@ -46,6 +46,29 @@ export function useUpdateDoctor() {
   });
 }
 
+export function useDoctorServices(doctorId: string | null) {
+  return useQuery({
+    queryKey: ["admin-doctor-services", doctorId],
+    queryFn: () => apiFetch<{ serviceIds: string[] }>(`/admin/doctors/${doctorId}/services`),
+    enabled: doctorId !== null,
+  });
+}
+
+export function useSetDoctorServices() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ doctorId, serviceIds }: { doctorId: string; serviceIds: string[] }) =>
+      apiFetch<{ serviceIds: string[] }>(`/admin/doctors/${doctorId}/services`, {
+        method: "PUT",
+        body: { serviceIds },
+      }),
+    onSuccess: (_data, { doctorId }) => {
+      queryClient.invalidateQueries({ queryKey: ["admin-doctor-services", doctorId] });
+      queryClient.invalidateQueries({ queryKey: ["services"] });
+    },
+  });
+}
+
 // --- Users ---
 
 interface ListUsersParams {

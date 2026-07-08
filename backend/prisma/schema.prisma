@@ -69,6 +69,10 @@ model User {
   notificationPreferences NotificationPreference[]
   reviewsWritten          Review[]                  @relation("PatientReviews")
   reviewsReceived         Review[]                  @relation("DoctorReviews")
+  // Doctor-only. Empty means "offers every active service" (backward
+  // compatible default) — assigning any service switches that doctor to an
+  // opt-in allowlist.
+  offeredServices         ClinicService[]           @relation("DoctorServices")
 
   @@index([role])
 }
@@ -82,7 +86,8 @@ model ClinicService {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
-  appointments Appointment[]
+  appointments    Appointment[]
+  offeredByDoctors User[]       @relation("DoctorServices")
 }
 
 model DoctorSchedule {

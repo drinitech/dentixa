@@ -4,11 +4,17 @@ import { authorize } from "../middleware/authorize";
 import { validate } from "../middleware/validate";
 import { createDoctorSchema, updateDoctorSchema, listUsersQuerySchema } from "../validations/admin.schema";
 import { adminListAppointmentsQuerySchema } from "../validations/appointment.schema";
-import { clinicServiceSchema, updateClinicServiceSchema } from "../validations/service.schema";
+import {
+  clinicServiceSchema,
+  updateClinicServiceSchema,
+  setDoctorServicesSchema,
+} from "../validations/service.schema";
 import {
   createDoctorHandler,
   listDoctorsHandler,
   updateDoctorHandler,
+  getDoctorServicesHandler,
+  setDoctorServicesHandler,
   listUsersHandler,
   banUserHandler,
   unbanUserHandler,
@@ -31,6 +37,12 @@ adminRouter.use(authenticate, authorize("ADMIN"));
 adminRouter.post("/doctors", validate(createDoctorSchema), createDoctorHandler);
 adminRouter.get("/doctors", listDoctorsHandler);
 adminRouter.patch("/doctors/:id", validate(updateDoctorSchema), updateDoctorHandler);
+adminRouter.get("/doctors/:id/services", getDoctorServicesHandler);
+adminRouter.put(
+  "/doctors/:id/services",
+  validate(setDoctorServicesSchema),
+  setDoctorServicesHandler,
+);
 
 adminRouter.get("/users", validate(listUsersQuerySchema, "query"), listUsersHandler);
 adminRouter.patch("/users/:id/ban", banUserHandler);

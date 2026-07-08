@@ -1,6 +1,8 @@
 import { Router } from "express";
 import { authenticate } from "../middleware/authenticate";
+import { validate } from "../middleware/validate";
 import { asyncHandler } from "../lib/asyncHandler";
+import { listServicesQuerySchema } from "../validations/service.schema";
 import { listActiveServices } from "../services/clinicService.service";
 
 export const serviceRouter = Router();
@@ -8,8 +10,10 @@ export const serviceRouter = Router();
 serviceRouter.get(
   "/",
   authenticate,
-  asyncHandler(async (_req, res) => {
-    const services = await listActiveServices();
+  validate(listServicesQuerySchema, "query"),
+  asyncHandler(async (req, res) => {
+    const { doctorId } = req.query as { doctorId?: string };
+    const services = await listActiveServices(doctorId);
     res.json({ services });
   }),
 );

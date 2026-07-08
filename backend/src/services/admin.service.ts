@@ -72,6 +72,28 @@ export async function updateDoctor(id: string, input: UpdateDoctorInput) {
   });
 }
 
+export async function getDoctorServices(doctorId: string) {
+  const doctor = await prisma.user.findUnique({
+    where: { id: doctorId },
+    include: { offeredServices: { select: { id: true } } },
+  });
+  if (!doctor || doctor.role !== "DOCTOR") throw new NotFoundError("Doctor not found");
+  return doctor.offeredServices.map((s) => s.id);
+}
+
+// Replace-all semantics, same pattern as replaceSchedule — empty array means
+// "no restriction" (bookable for every active service), not "offers nothing".
+export async function setDoctorServices(doctorId: string, serviceIds: string[]) {
+  const doctor = await prisma.user.findUnique({ where: { id: doctorId } });
+  if (!doctor || doctor.role !== "DOCTOR") throw new NotFoundError("Doctor not found");
+
+  await prisma.user.update({
+    where: { id: doctorId },
+    data: { offeredServices: { set: serviceIds.map((id) => ({ id })) } },
+  });
+  return serviceIds;
+}
+
 export async function listUsers(query: ListUsersQuery) {
   const where: Prisma.UserWhereInput = {};
   if (query.role) where.role = query.role;

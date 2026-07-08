@@ -11,10 +11,10 @@ export function useDoctors() {
   });
 }
 
-export function useServices() {
+export function useServices(doctorId?: string) {
   return useQuery({
-    queryKey: ["services"],
-    queryFn: () => apiFetch<{ services: ClinicService[] }>("/services"),
+    queryKey: ["services", doctorId],
+    queryFn: () => apiFetch<{ services: ClinicService[] }>(`/services${doctorId ? `?doctorId=${doctorId}` : ""}`),
   });
 }
 

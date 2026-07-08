@@ -21,6 +21,16 @@ export const updateDoctorHandler = asyncHandler(async (req: Request, res: Respon
   res.json({ doctor });
 });
 
+export const getDoctorServicesHandler = asyncHandler(async (req: Request, res: Response) => {
+  const serviceIds = await adminService.getDoctorServices(req.params.id);
+  res.json({ serviceIds });
+});
+
+export const setDoctorServicesHandler = asyncHandler(async (req: Request, res: Response) => {
+  const serviceIds = await adminService.setDoctorServices(req.params.id, req.body.serviceIds);
+  res.json({ serviceIds });
+});
+
 export const listUsersHandler = asyncHandler(async (req: Request, res: Response) => {
   const result = await adminService.listUsers(req.query as any);
   res.json(result);

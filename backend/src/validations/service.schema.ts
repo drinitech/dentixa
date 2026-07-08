@@ -8,3 +8,13 @@ export const clinicServiceSchema = z.object({
 export type ClinicServiceInput = z.infer<typeof clinicServiceSchema>;
 
 export const updateClinicServiceSchema = clinicServiceSchema.partial();
+
+export const listServicesQuerySchema = z.object({
+  doctorId: z.string().min(1).optional(),
+});
+export type ListServicesQuery = z.infer<typeof listServicesQuerySchema>;
+
+export const setDoctorServicesSchema = z.object({
+  serviceIds: z.array(z.string().min(1)).max(100),
+});
+export type SetDoctorServicesInput = z.infer<typeof setDoctorServicesSchema>;

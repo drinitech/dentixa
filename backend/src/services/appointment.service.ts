@@ -24,7 +24,10 @@ const appointmentInclude = {
 } satisfies Prisma.AppointmentInclude;
 
 export async function createAppointment(patientId: string, input: CreateAppointmentInput) {
-  const doctor = await prisma.user.findUnique({ where: { id: input.doctorId } });
+  const doctor = await prisma.user.findUnique({
+    where: { id: input.doctorId },
+    include: { offeredServices: { select: { id: true } } },
+  });
   if (!doctor || doctor.role !== "DOCTOR" || !doctor.isActive) {
     throw new BadRequestError("Selected doctor is not available");
   }
@@ -32,6 +35,11 @@ export async function createAppointment(patientId: string, input: CreateAppointm
   const service = await prisma.clinicService.findUnique({ where: { id: input.serviceId } });
   if (!service || !service.isActive) {
     throw new BadRequestError("Selected service is not available");
+  }
+
+  // Empty offeredServices means the doctor hasn't opted into a restricted list.
+  if (doctor.offeredServices.length > 0 && !doctor.offeredServices.some((s) => s.id === input.serviceId)) {
+    throw new BadRequestError("Selected doctor does not offer this service");
   }
 
   const dateObj = parseDateOnly(input.date);

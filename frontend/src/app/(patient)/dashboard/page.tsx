@@ -19,13 +19,20 @@ import { formatDate, formatDayLabel } from "@/lib/utils";
 
 export default function PatientDashboardPage() {
   const { data: doctorsData, isLoading: doctorsLoading } = useDoctors();
-  const { data: servicesData, isLoading: servicesLoading } = useServices();
 
   const [doctorId, setDoctorId] = useState<string | null>(null);
   const [serviceId, setServiceId] = useState<string | null>(null);
   const [date, setDate] = useState<string | null>(null);
   const [time, setTime] = useState<string | null>(null);
   const [reason, setReason] = useState("");
+
+  const { data: servicesData, isLoading: servicesLoading } = useServices(doctorId ?? undefined);
+
+  function handleDoctorChange(id: string) {
+    setDoctorId(id);
+    setServiceId(null);
+    setTime(null);
+  }
 
   const { data: slotsData, isLoading: slotsLoading } = useSlots(
     doctorId ?? undefined,
@@ -62,7 +69,7 @@ export default function PatientDashboardPage() {
           <CardTitle>1. Choose a doctor</CardTitle>
         </CardHeader>
         <CardContent>
-          <DoctorPicker doctors={doctors} value={doctorId} onChange={setDoctorId} />
+          <DoctorPicker doctors={doctors} value={doctorId} onChange={handleDoctorChange} />
         </CardContent>
       </Card>
 
