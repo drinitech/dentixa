@@ -1,8 +1,17 @@
-import { CalendarDays, CheckCircle2, Clock, Stethoscope, X } from "lucide-react";
+"use client";
+
+import { useState } from "react";
+import { toast } from "sonner";
+import { CalendarDays, CheckCircle2, Clock, Star, Stethoscope, X } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { StatusBadge } from "./status-badge";
+import { StarRating } from "./star-rating";
 import { Button } from "@/components/ui/button";
+import { Dialog } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
 import { formatDate } from "@/lib/utils";
+import { useCreateReview } from "@/hooks/use-appointments";
+import { ApiError } from "@/lib/api-client";
 import type { Appointment } from "@/types";
 
 export function AppointmentCard({
@@ -22,6 +31,25 @@ export function AppointmentCard({
 }) {
   const canCancel = appointment.status === "PENDING" || appointment.status === "APPROVED";
   const canComplete = appointment.status === "APPROVED";
+  // Only the patient reviews their own visit — showPatient is true for the doctor/admin view.
+  const canReview = !showPatient && appointment.status === "DONE" && !appointment.review;
+
+  const [reviewOpen, setReviewOpen] = useState(false);
+  const [rating, setRating] = useState(5);
+  const [comment, setComment] = useState("");
+  const createReview = useCreateReview();
+
+  async function submitReview() {
+    try {
+      await createReview.mutateAsync({ id: appointment.id, rating, comment });
+      toast.success("Thanks for your feedback");
+      setReviewOpen(false);
+      setRating(5);
+      setComment("");
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : "Could not submit review");
+    }
+  }
 
   return (
     <Card>
@@ -52,8 +80,14 @@ export function AppointmentCard({
           {appointment.status === "REJECTED" && appointment.rejectionReason && (
             <p className="text-sm text-status-rejected-foreground">Reason: {appointment.rejectionReason}</p>
           )}
+          {!showPatient && appointment.review && (
+            <div className="flex items-center gap-1.5">
+              <StarRating value={appointment.review.rating} size="sm" />
+              <span className="text-xs text-muted-foreground">Your review</span>
+            </div>
+          )}
         </div>
-        {(canComplete && onComplete) || (canCancel && onCancel) ? (
+        {(canComplete && onComplete) || (canCancel && onCancel) || canReview ? (
           <div className="flex shrink-0 items-center gap-2">
             {canComplete && onComplete && (
               <Button
@@ -64,6 +98,12 @@ export function AppointmentCard({
               >
                 <CheckCircle2 className="h-3.5 w-3.5" />
                 Mark done
+              </Button>
+            )}
+            {canReview && (
+              <Button variant="outline" size="sm" onClick={() => setReviewOpen(true)}>
+                <Star className="h-3.5 w-3.5" />
+                Leave a review
               </Button>
             )}
             {canCancel && onCancel && (
@@ -80,6 +120,26 @@ export function AppointmentCard({
           </div>
         ) : null}
       </CardContent>
+
+      <Dialog
+        open={reviewOpen}
+        onOpenChange={setReviewOpen}
+        title="Leave a review"
+        description={`How was your visit with Dr. ${appointment.doctor.name}?`}
+      >
+        <div className="space-y-4">
+          <StarRating value={rating} onChange={setRating} />
+          <Textarea
+            placeholder="Optional comment…"
+            value={comment}
+            onChange={(e) => setComment(e.target.value)}
+            maxLength={500}
+          />
+          <Button className="w-full" onClick={submitReview} disabled={createReview.isPending}>
+            {createReview.isPending ? "Submitting…" : "Submit review"}
+          </Button>
+        </div>
+      </Dialog>
     </Card>
   );
 }

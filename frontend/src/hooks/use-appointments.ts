@@ -81,6 +81,21 @@ export function useCompleteAppointment() {
   });
 }
 
+export function useCreateReview() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, rating, comment }: { id: string; rating: number; comment?: string }) =>
+      apiFetch<{ review: { id: string; rating: number; comment: string | null } }>(`/appointments/${id}/review`, {
+        method: "POST",
+        body: { rating, comment: comment || undefined },
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["appointments"] });
+      queryClient.invalidateQueries({ queryKey: ["doctors"] });
+    },
+  });
+}
+
 export function useCancelAppointment(options?: { admin?: boolean }) {
   const queryClient = useQueryClient();
   return useMutation({

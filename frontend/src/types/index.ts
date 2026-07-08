@@ -29,6 +29,22 @@ export interface DoctorSummary {
   name: string;
   email: string;
   avatarUrl: string | null;
+  averageRating?: number | null;
+  reviewCount?: number;
+}
+
+export interface Review {
+  id: string;
+  rating: number;
+  comment: string | null;
+}
+
+export interface DoctorReview {
+  id: string;
+  rating: number;
+  comment: string | null;
+  createdAt: string;
+  patient: { id: string; name: string };
 }
 
 export interface DoctorScheduleWindow {
@@ -53,6 +69,7 @@ export interface Appointment {
   patient: { id: string; name: string; email: string; phone: string | null };
   doctor: { id: string; name: string; email: string };
   service: { id: string; name: string; durationMinutes: number; price: string | number | null } | null;
+  review: Review | null;
 }
 
 export interface NotificationPreference {

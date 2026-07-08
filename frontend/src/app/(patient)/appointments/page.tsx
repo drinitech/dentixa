@@ -18,6 +18,7 @@ const TABS: { label: string; value: AppointmentStatus | "ALL" }[] = [
   { label: "Approved", value: "APPROVED" },
   { label: "Rejected", value: "REJECTED" },
   { label: "Cancelled", value: "CANCELLED" },
+  { label: "Done", value: "DONE" },
 ];
 
 export default function PatientAppointmentsPage() {

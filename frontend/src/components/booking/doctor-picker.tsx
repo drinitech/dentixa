@@ -1,6 +1,7 @@
 import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Avatar } from "@/components/common/avatar";
+import { StarRating } from "@/components/appointments/star-rating";
 import type { DoctorSummary } from "@/types";
 
 export function DoctorPicker({
@@ -37,6 +38,12 @@ export function DoctorPicker({
             <div className="min-w-0">
               <p className="truncate text-sm font-medium text-foreground">{doctor.name}</p>
               <p className="truncate text-xs text-muted-foreground">{doctor.email}</p>
+              {doctor.averageRating != null && (
+                <div className="mt-1 flex items-center justify-center gap-1">
+                  <StarRating value={doctor.averageRating} size="sm" />
+                  <span className="text-xs text-muted-foreground">({doctor.reviewCount})</span>
+                </div>
+              )}
             </div>
           </button>
         );

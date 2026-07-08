@@ -4,6 +4,7 @@ import { authorize } from "../middleware/authorize";
 import { asyncHandler } from "../lib/asyncHandler";
 import { listActiveDoctors } from "../services/doctor.service";
 import { getDoctorStats } from "../services/stats.service";
+import { listDoctorReviews } from "../services/review.service";
 
 export const doctorRouter = Router();
 
@@ -23,5 +24,14 @@ doctorRouter.get(
   asyncHandler(async (req, res) => {
     const stats = await getDoctorStats(req.user!.id);
     res.json({ stats });
+  }),
+);
+
+doctorRouter.get(
+  "/:id/reviews",
+  authenticate,
+  asyncHandler(async (req, res) => {
+    const result = await listDoctorReviews(req.params.id);
+    res.json(result);
   }),
 );

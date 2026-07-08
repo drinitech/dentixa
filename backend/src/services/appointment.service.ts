@@ -20,6 +20,7 @@ const appointmentInclude = {
   patient: { select: { id: true, name: true, email: true, phone: true } },
   doctor: { select: { id: true, name: true, email: true } },
   service: { select: { id: true, name: true, durationMinutes: true, price: true } },
+  review: { select: { id: true, rating: true, comment: true } },
 } satisfies Prisma.AppointmentInclude;
 
 export async function createAppointment(patientId: string, input: CreateAppointmentInput) {
