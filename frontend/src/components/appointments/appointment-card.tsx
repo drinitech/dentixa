@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
-import { CalendarDays, CheckCircle2, Clock, Star, Stethoscope, X } from "lucide-react";
+import { CalendarDays, CheckCircle2, Clock, Star, Stethoscope, UserX, X } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { StatusBadge } from "./status-badge";
 import { StarRating } from "./star-rating";
@@ -20,6 +20,8 @@ export function AppointmentCard({
   cancelling,
   onComplete,
   completing,
+  onNoShow,
+  markingNoShow,
   showPatient,
 }: {
   appointment: Appointment;
@@ -27,10 +29,13 @@ export function AppointmentCard({
   cancelling?: boolean;
   onComplete?: (id: string) => void;
   completing?: boolean;
+  onNoShow?: (id: string) => void;
+  markingNoShow?: boolean;
   showPatient?: boolean;
 }) {
   const canCancel = appointment.status === "PENDING" || appointment.status === "APPROVED";
   const canComplete = appointment.status === "APPROVED";
+  const canMarkNoShow = appointment.status === "APPROVED";
   // Only the patient reviews their own visit — showPatient is true for the doctor/admin view.
   const canReview = !showPatient && appointment.status === "DONE" && !appointment.review;
 
@@ -87,8 +92,8 @@ export function AppointmentCard({
             </div>
           )}
         </div>
-        {(canComplete && onComplete) || (canCancel && onCancel) || canReview ? (
-          <div className="flex shrink-0 items-center gap-2">
+        {(canComplete && onComplete) || (canMarkNoShow && onNoShow) || (canCancel && onCancel) || canReview ? (
+          <div className="flex shrink-0 flex-wrap items-center gap-2">
             {canComplete && onComplete && (
               <Button
                 variant="outline"
@@ -98,6 +103,17 @@ export function AppointmentCard({
               >
                 <CheckCircle2 className="h-3.5 w-3.5" />
                 Mark done
+              </Button>
+            )}
+            {canMarkNoShow && onNoShow && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => onNoShow(appointment.id)}
+                disabled={markingNoShow}
+              >
+                <UserX className="h-3.5 w-3.5" />
+                No-show
               </Button>
             )}
             {canReview && (

@@ -23,6 +23,7 @@ enum AppointmentStatus {
   REJECTED
   CANCELLED
   DONE
+  NO_SHOW
 }
 
 enum NotificationChannel {

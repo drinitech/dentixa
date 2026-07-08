@@ -10,16 +10,17 @@ function startOfWeek(): Date {
 export async function getDoctorStats(doctorId: string) {
   const weekStart = startOfWeek();
 
-  const [appointmentsThisWeek, rejectionsCount, pendingCount, doneCount] = await Promise.all([
+  const [appointmentsThisWeek, rejectionsCount, pendingCount, doneCount, noShowCount] = await Promise.all([
     prisma.appointment.count({
       where: { doctorId, status: "APPROVED", date: { gte: weekStart } },
     }),
     prisma.appointment.count({ where: { doctorId, status: "REJECTED" } }),
     prisma.appointment.count({ where: { doctorId, status: "PENDING" } }),
     prisma.appointment.count({ where: { doctorId, status: "DONE" } }),
+    prisma.appointment.count({ where: { doctorId, status: "NO_SHOW" } }),
   ]);
 
-  return { appointmentsThisWeek, rejectionsCount, pendingCount, doneCount };
+  return { appointmentsThisWeek, rejectionsCount, pendingCount, doneCount, noShowCount };
 }
 
 export async function getAdminStats() {

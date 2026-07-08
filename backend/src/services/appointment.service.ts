@@ -139,7 +139,12 @@ export async function cancelAppointment(id: string, actor: CancelActor) {
     actor.role === "ADMIN";
   if (!owns) throw new ForbiddenError();
 
-  if (appt.status === "CANCELLED" || appt.status === "REJECTED" || appt.status === "DONE") {
+  if (
+    appt.status === "CANCELLED" ||
+    appt.status === "REJECTED" ||
+    appt.status === "DONE" ||
+    appt.status === "NO_SHOW"
+  ) {
     throw new ConflictError("This appointment is already inactive");
   }
 
@@ -162,6 +167,22 @@ export async function completeAppointment(id: string, doctorId: string) {
   return prisma.appointment.update({
     where: { id },
     data: { status: "DONE" },
+    include: appointmentInclude,
+  });
+}
+
+// Doctor marks an approved appointment as a no-show (patient never came).
+// Distinct from CANCELLED so stats can tell "didn't happen, patient's fault"
+// apart from a deliberate cancellation.
+export async function markNoShow(id: string, doctorId: string) {
+  const appt = await prisma.appointment.findUnique({ where: { id } });
+  if (!appt) throw new NotFoundError("Appointment not found");
+  if (appt.doctorId !== doctorId) throw new ForbiddenError();
+  if (appt.status !== "APPROVED") throw new ConflictError("Only approved appointments can be marked as no-show");
+
+  return prisma.appointment.update({
+    where: { id },
+    data: { status: "NO_SHOW" },
     include: appointmentInclude,
   });
 }

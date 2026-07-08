@@ -21,6 +21,7 @@ export const STATUS_LABELS: Record<string, string> = {
   REJECTED: "Rejected",
   CANCELLED: "Cancelled",
   DONE: "Done",
+  NO_SHOW: "No-show",
 };
 
 export const DAY_LABELS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];

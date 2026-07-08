@@ -81,6 +81,20 @@ export function useCompleteAppointment() {
   });
 }
 
+export function useMarkNoShow() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) =>
+      apiFetch<{ appointment: Appointment }>(`/appointments/${id}/no-show`, {
+        method: "PATCH",
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["appointments"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-appointments"] });
+    },
+  });
+}
+
 export function useCreateReview() {
   const queryClient = useQueryClient();
   return useMutation({

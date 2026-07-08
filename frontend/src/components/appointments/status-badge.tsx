@@ -8,6 +8,7 @@ const STATUS_CLASSES: Record<AppointmentStatus, string> = {
   REJECTED: "bg-status-rejected text-status-rejected-foreground",
   CANCELLED: "bg-status-cancelled text-status-cancelled-foreground",
   DONE: "bg-status-done text-status-done-foreground",
+  NO_SHOW: "bg-status-noshow text-status-noshow-foreground",
 };
 
 export function StatusBadge({ status }: { status: AppointmentStatus }) {

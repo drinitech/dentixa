@@ -2,15 +2,21 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
-import { CalendarCheck2, CalendarX2, CheckCircle2, Clock, XCircle } from "lucide-react";
+import { CalendarCheck2, CalendarX2, CheckCircle2, Clock, UserX, XCircle } from "lucide-react";
 import { PageHeader } from "@/components/common/page-header";
 import { PageLoading } from "@/components/common/loading-spinner";
 import { EmptyState } from "@/components/common/empty-state";
 import { StatTile } from "@/components/common/stat-tile";
 import { AppointmentCard } from "@/components/appointments/appointment-card";
 import { useDoctorStats } from "@/hooks/use-stats";
-import { useAppointments, useCancelAppointment, useCompleteAppointment } from "@/hooks/use-appointments";
+import {
+  useAppointments,
+  useCancelAppointment,
+  useCompleteAppointment,
+  useMarkNoShow,
+} from "@/hooks/use-appointments";
 import { ApiError } from "@/lib/api-client";
+import { STATUS_LABELS } from "@/lib/utils";
 import type { AppointmentStatus } from "@/types";
 
 type Filter = AppointmentStatus | "ALL";
@@ -23,6 +29,7 @@ export default function DoctorStatsPage() {
   );
   const cancelAppointment = useCancelAppointment();
   const completeAppointment = useCompleteAppointment();
+  const markNoShow = useMarkNoShow();
 
   function toggleFilter(next: Filter) {
     setFilter((current) => (current === next ? "ALL" : next));
@@ -46,6 +53,15 @@ export default function DoctorStatsPage() {
     }
   }
 
+  async function handleNoShow(id: string) {
+    try {
+      await markNoShow.mutateAsync(id);
+      toast.success("Appointment marked as no-show");
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : "Could not mark appointment as no-show");
+    }
+  }
+
   if (isLoading || !data) return <PageLoading />;
 
   return (
@@ -54,7 +70,7 @@ export default function DoctorStatsPage() {
         title="Your stats"
         description="Click a stat to filter the appointment table below, and manage appointments directly from it."
       />
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
         <StatTile
           icon={CalendarCheck2}
           label="Confirmed this week"
@@ -83,11 +99,18 @@ export default function DoctorStatsPage() {
           onClick={() => toggleFilter("DONE")}
           active={filter === "DONE"}
         />
+        <StatTile
+          icon={UserX}
+          label="No-shows"
+          value={data.stats.noShowCount}
+          onClick={() => toggleFilter("NO_SHOW")}
+          active={filter === "NO_SHOW"}
+        />
       </div>
 
       <div>
         <p className="mb-3 text-sm font-medium text-foreground">
-          {filter === "ALL" ? "All appointments" : `${filter.charAt(0)}${filter.slice(1).toLowerCase()} appointments`}
+          {filter === "ALL" ? "All appointments" : `${STATUS_LABELS[filter]} appointments`}
         </p>
         {appointmentsLoading ? (
           <PageLoading />
@@ -101,6 +124,8 @@ export default function DoctorStatsPage() {
                 cancelling={cancelAppointment.isPending}
                 onComplete={handleComplete}
                 completing={completeAppointment.isPending}
+                onNoShow={handleNoShow}
+                markingNoShow={markNoShow.isPending}
                 showPatient
               />
             ))}

@@ -56,6 +56,7 @@ export default function AdminAppointmentsPage() {
           <option value="REJECTED">Rejected</option>
           <option value="CANCELLED">Cancelled</option>
           <option value="DONE">Done</option>
+          <option value="NO_SHOW">No-show</option>
         </Select>
         <Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} />
         <Input type="date" value={to} onChange={(e) => setTo(e.target.value)} />

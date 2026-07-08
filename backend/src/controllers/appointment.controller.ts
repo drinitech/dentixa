@@ -79,3 +79,8 @@ export const completeHandler = asyncHandler(async (req: Request, res: Response) 
   const appt = await appointmentService.completeAppointment(req.params.id, req.user!.id);
   res.json({ appointment: appt });
 });
+
+export const noShowHandler = asyncHandler(async (req: Request, res: Response) => {
+  const appt = await appointmentService.markNoShow(req.params.id, req.user!.id);
+  res.json({ appointment: appt });
+});

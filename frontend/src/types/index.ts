@@ -1,5 +1,5 @@
 export type Role = "PATIENT" | "DOCTOR" | "ADMIN";
-export type AppointmentStatus = "PENDING" | "APPROVED" | "REJECTED" | "CANCELLED" | "DONE";
+export type AppointmentStatus = "PENDING" | "APPROVED" | "REJECTED" | "CANCELLED" | "DONE" | "NO_SHOW";
 export type NotificationChannel = "EMAIL" | "SMS";
 export type NotificationEventType =
   | "APPOINTMENT_CREATED"
@@ -98,6 +98,7 @@ export interface DoctorStats {
   rejectionsCount: number;
   pendingCount: number;
   doneCount: number;
+  noShowCount: number;
 }
 
 export interface AdminStats {
