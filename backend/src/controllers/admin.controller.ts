@@ -3,6 +3,7 @@ import { asyncHandler } from "../lib/asyncHandler";
 import * as adminService from "../services/admin.service";
 import * as appointmentService from "../services/appointment.service";
 import * as clinicServiceService from "../services/clinicService.service";
+import * as clinicHolidayService from "../services/clinicHoliday.service";
 import * as statsService from "../services/stats.service";
 import { notifyWaitlistIfSlotsOpened } from "../services/waitlist.service";
 import { buildAppointmentsWorkbook } from "../lib/excel";
@@ -108,4 +109,19 @@ export const deactivateServiceHandler = asyncHandler(async (req: Request, res: R
 export const adminStatsHandler = asyncHandler(async (_req: Request, res: Response) => {
   const stats = await statsService.getAdminStats();
   res.json({ stats });
+});
+
+export const listClinicHolidaysHandler = asyncHandler(async (_req: Request, res: Response) => {
+  const holidays = await clinicHolidayService.listClinicHolidays();
+  res.json({ holidays });
+});
+
+export const createClinicHolidayHandler = asyncHandler(async (req: Request, res: Response) => {
+  const holiday = await clinicHolidayService.addClinicHoliday(req.body);
+  res.status(201).json({ holiday });
+});
+
+export const deleteClinicHolidayHandler = asyncHandler(async (req: Request, res: Response) => {
+  await clinicHolidayService.removeClinicHoliday(req.params.id);
+  res.status(204).send();
 });

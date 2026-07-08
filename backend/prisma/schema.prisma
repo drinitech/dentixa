@@ -123,6 +123,16 @@ model ScheduleException {
   @@index([doctorId])
 }
 
+// Clinic-wide closure (national holiday, etc.) — unlike ScheduleException
+// this isn't tied to one doctor; getFreeSlots treats it as zero slots for
+// every doctor on that date. Admin-managed.
+model ClinicHoliday {
+  id        String   @id @default(cuid())
+  date      DateTime @db.Date @unique
+  reason    String?
+  createdAt DateTime @default(now())
+}
+
 // A patient asking to be emailed if a slot opens up for a doctor+service+date
 // that currently has none. Cleared (deleted) once notified — a one-shot ping,
 // not a standing subscription, since slots fill fast.

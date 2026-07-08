@@ -1,12 +1,18 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
 
-const { clinicServiceFindUnique, doctorScheduleFindMany, appointmentFindMany, scheduleExceptionFindUnique } =
-  vi.hoisted(() => ({
-    clinicServiceFindUnique: vi.fn(),
-    doctorScheduleFindMany: vi.fn(),
-    appointmentFindMany: vi.fn(),
-    scheduleExceptionFindUnique: vi.fn(),
-  }));
+const {
+  clinicServiceFindUnique,
+  doctorScheduleFindMany,
+  appointmentFindMany,
+  scheduleExceptionFindUnique,
+  clinicHolidayFindUnique,
+} = vi.hoisted(() => ({
+  clinicServiceFindUnique: vi.fn(),
+  doctorScheduleFindMany: vi.fn(),
+  appointmentFindMany: vi.fn(),
+  scheduleExceptionFindUnique: vi.fn(),
+  clinicHolidayFindUnique: vi.fn(),
+}));
 
 vi.mock("../../lib/prisma", () => ({
   prisma: {
@@ -14,6 +20,7 @@ vi.mock("../../lib/prisma", () => ({
     doctorSchedule: { findMany: doctorScheduleFindMany },
     appointment: { findMany: appointmentFindMany },
     scheduleException: { findUnique: scheduleExceptionFindUnique },
+    clinicHoliday: { findUnique: clinicHolidayFindUnique },
   },
 }));
 
@@ -24,6 +31,7 @@ describe("getFreeSlots", () => {
     vi.clearAllMocks();
     clinicServiceFindUnique.mockResolvedValue({ id: "svc-1", durationMinutes: 30, isActive: true });
     scheduleExceptionFindUnique.mockResolvedValue(null);
+    clinicHolidayFindUnique.mockResolvedValue(null);
   });
 
   it("returns every slot in the schedule window when nothing is booked", async () => {
@@ -64,6 +72,16 @@ describe("getFreeSlots", () => {
 
   it("returns no slots on a date marked as a schedule exception", async () => {
     scheduleExceptionFindUnique.mockResolvedValue({ id: "exc-1", doctorId: "doc-1", date: new Date(), reason: null });
+    doctorScheduleFindMany.mockResolvedValue([{ startTime: "09:00", endTime: "10:00" }]);
+    appointmentFindMany.mockResolvedValue([]);
+
+    const slots = await getFreeSlots("doc-1", "2099-01-02", "svc-1");
+    expect(slots).toEqual([]);
+    expect(doctorScheduleFindMany).not.toHaveBeenCalled();
+  });
+
+  it("returns no slots on a clinic-wide holiday, for any doctor", async () => {
+    clinicHolidayFindUnique.mockResolvedValue({ id: "hol-1", date: new Date(), reason: "National holiday" });
     doctorScheduleFindMany.mockResolvedValue([{ startTime: "09:00", endTime: "10:00" }]);
     appointmentFindMany.mockResolvedValue([]);
 

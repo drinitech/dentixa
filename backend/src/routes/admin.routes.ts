@@ -9,6 +9,7 @@ import {
   updateClinicServiceSchema,
   setDoctorServicesSchema,
 } from "../validations/service.schema";
+import { createClinicHolidaySchema } from "../validations/clinicHoliday.schema";
 import {
   createDoctorHandler,
   listDoctorsHandler,
@@ -28,6 +29,9 @@ import {
   updateServiceHandler,
   deactivateServiceHandler,
   adminStatsHandler,
+  listClinicHolidaysHandler,
+  createClinicHolidayHandler,
+  deleteClinicHolidayHandler,
 } from "../controllers/admin.controller";
 
 export const adminRouter = Router();
@@ -68,3 +72,11 @@ adminRouter.patch("/services/:id", validate(updateClinicServiceSchema), updateSe
 adminRouter.delete("/services/:id", deactivateServiceHandler);
 
 adminRouter.get("/stats", adminStatsHandler);
+
+adminRouter.get("/clinic-holidays", listClinicHolidaysHandler);
+adminRouter.post(
+  "/clinic-holidays",
+  validate(createClinicHolidaySchema),
+  createClinicHolidayHandler,
+);
+adminRouter.delete("/clinic-holidays/:id", deleteClinicHolidayHandler);

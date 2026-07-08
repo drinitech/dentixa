@@ -1,4 +1,14 @@
-import { CalendarPlus, ClipboardList, UserCog, Users, Stethoscope, CalendarDays, BarChart3, Settings } from "lucide-react";
+import {
+  CalendarPlus,
+  ClipboardList,
+  UserCog,
+  Users,
+  Stethoscope,
+  CalendarDays,
+  BarChart3,
+  Settings,
+  CalendarOff,
+} from "lucide-react";
 import type { NavItem } from "./app-shell";
 import type { Role } from "@/types";
 
@@ -22,6 +32,7 @@ export const adminNav: NavItem[] = [
   { label: "Users", href: "/admin/users", icon: Users },
   { label: "Appointments", href: "/admin/appointments", icon: CalendarDays },
   { label: "Services", href: "/admin/services", icon: Settings },
+  { label: "Holidays", href: "/admin/holidays", icon: CalendarOff },
   { label: "Profile", href: "/admin/profile", icon: UserCog },
 ];
 

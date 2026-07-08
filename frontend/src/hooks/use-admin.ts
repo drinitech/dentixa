@@ -2,7 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiFetch } from "@/lib/api-client";
-import type { AdminUser, ClinicService, Role } from "@/types";
+import type { AdminUser, ClinicService, ClinicHoliday, Role } from "@/types";
 
 // --- Doctors ---
 
@@ -157,5 +157,31 @@ export function useDeactivateService() {
       queryClient.invalidateQueries({ queryKey: ["admin-services"] });
       queryClient.invalidateQueries({ queryKey: ["services"] });
     },
+  });
+}
+
+// --- Clinic holidays ---
+
+export function useClinicHolidays() {
+  return useQuery({
+    queryKey: ["admin-clinic-holidays"],
+    queryFn: () => apiFetch<{ holidays: ClinicHoliday[] }>("/admin/clinic-holidays"),
+  });
+}
+
+export function useAddClinicHoliday() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { date: string; reason?: string }) =>
+      apiFetch<{ holiday: ClinicHoliday }>("/admin/clinic-holidays", { method: "POST", body: input }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["admin-clinic-holidays"] }),
+  });
+}
+
+export function useRemoveClinicHoliday() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => apiFetch<void>(`/admin/clinic-holidays/${id}`, { method: "DELETE" }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["admin-clinic-holidays"] }),
   });
 }

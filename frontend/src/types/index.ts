@@ -62,6 +62,12 @@ export interface ScheduleException {
   reason: string | null;
 }
 
+export interface ClinicHoliday {
+  id: string;
+  date: string;
+  reason: string | null;
+}
+
 export interface Appointment {
   id: string;
   patientId: string;
