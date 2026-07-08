@@ -22,7 +22,7 @@ export function DoctorForm({ open, onOpenChange }: { open: boolean; onOpenChange
 
   async function onSubmit(data: CreateDoctorFormInput) {
     try {
-      await createDoctor.mutateAsync({ ...data, phone: data.phone || undefined });
+      await createDoctor.mutateAsync({ ...data, phone: data.phone || undefined, specialty: data.specialty || undefined });
       toast.success("Doctor account created");
       reset();
       onOpenChange(false);
@@ -47,6 +47,10 @@ export function DoctorForm({ open, onOpenChange }: { open: boolean; onOpenChange
         <div className="space-y-1.5">
           <Label htmlFor="doctor-phone">Phone (optional)</Label>
           <Input id="doctor-phone" {...register("phone")} />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="doctor-specialty">Specialty (optional)</Label>
+          <Input id="doctor-specialty" placeholder="e.g. Orthodontist" {...register("specialty")} />
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="doctor-password">Temporary password</Label>

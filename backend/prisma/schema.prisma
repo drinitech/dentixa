@@ -44,6 +44,8 @@ model User {
   passwordHash String
   role         Role     @default(PATIENT)
   phone        String?
+  // Doctor-only, self-set (e.g. "Orthodontist") — null/ignored for other roles.
+  specialty    String?
   // Stored as a data: URI (small, resized client-side before upload) rather
   // than a filesystem path — Render's disk isn't persisted across deploys.
   avatarUrl    String?  @db.Text

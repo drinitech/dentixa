@@ -51,7 +51,10 @@ export default function AdminDoctorsPage() {
                   <Avatar src={doctor.avatarUrl} name={doctor.name} size="sm" />
                   <div>
                     <p className="text-sm font-medium text-foreground">{doctor.name}</p>
-                    <p className="text-sm text-muted-foreground">{doctor.email}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {doctor.email}
+                      {doctor.specialty ? ` · ${doctor.specialty}` : ""}
+                    </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">

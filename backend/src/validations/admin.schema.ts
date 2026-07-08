@@ -5,12 +5,14 @@ export const createDoctorSchema = z.object({
   email: z.string().trim().toLowerCase().email(),
   password: z.string().min(8).max(72),
   phone: z.string().trim().min(6).max(20).optional(),
+  specialty: z.string().trim().min(2).max(100).optional(),
 });
 export type CreateDoctorInput = z.infer<typeof createDoctorSchema>;
 
 export const updateDoctorSchema = z.object({
   name: z.string().trim().min(2).max(100).optional(),
   phone: z.string().trim().min(6).max(20).optional(),
+  specialty: z.string().trim().min(2).max(100).optional(),
   isActive: z.boolean().optional(),
 });
 export type UpdateDoctorInput = z.infer<typeof updateDoctorSchema>;

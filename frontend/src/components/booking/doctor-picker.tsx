@@ -37,7 +37,11 @@ export function DoctorPicker({
             <Avatar src={doctor.avatarUrl} name={doctor.name} size="lg" />
             <div className="min-w-0">
               <p className="truncate text-sm font-medium text-foreground">{doctor.name}</p>
-              <p className="truncate text-xs text-muted-foreground">{doctor.email}</p>
+              {doctor.specialty ? (
+                <p className="truncate text-xs text-muted-foreground">{doctor.specialty}</p>
+              ) : (
+                <p className="truncate text-xs text-muted-foreground">{doctor.email}</p>
+              )}
               {doctor.averageRating != null && (
                 <div className="mt-1 flex items-center justify-center gap-1">
                   <StarRating value={doctor.averageRating} size="sm" />

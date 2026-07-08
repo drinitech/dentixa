@@ -16,3 +16,8 @@ export const updateAvatarHandler = asyncHandler(async (req: Request, res: Respon
   const user = await userService.updateAvatar(req.user!.id, req.body.avatarUrl);
   res.json({ user });
 });
+
+export const updateSpecialtyHandler = asyncHandler(async (req: Request, res: Response) => {
+  const user = await userService.updateSpecialty(req.user!.id, req.body.specialty);
+  res.json({ user });
+});

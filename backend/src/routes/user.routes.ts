@@ -1,11 +1,17 @@
 import { Router } from "express";
 import { authenticate } from "../middleware/authenticate";
+import { authorize } from "../middleware/authorize";
 import { validate } from "../middleware/validate";
-import { updateNotificationPreferencesSchema, updateAvatarSchema } from "../validations/user.schema";
+import {
+  updateNotificationPreferencesSchema,
+  updateAvatarSchema,
+  updateSpecialtySchema,
+} from "../validations/user.schema";
 import {
   getNotificationPreferencesHandler,
   updateNotificationPreferencesHandler,
   updateAvatarHandler,
+  updateSpecialtyHandler,
 } from "../controllers/user.controller";
 
 export const userRouter = Router();
@@ -19,3 +25,9 @@ userRouter.patch(
   updateNotificationPreferencesHandler,
 );
 userRouter.patch("/me/avatar", validate(updateAvatarSchema), updateAvatarHandler);
+userRouter.patch(
+  "/me/specialty",
+  authorize("DOCTOR"),
+  validate(updateSpecialtySchema),
+  updateSpecialtyHandler,
+);

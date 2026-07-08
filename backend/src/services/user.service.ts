@@ -5,7 +5,15 @@ export async function updateAvatar(userId: string, avatarUrl: string) {
   return prisma.user.update({
     where: { id: userId },
     data: { avatarUrl },
-    select: { id: true, name: true, email: true, role: true, phone: true, avatarUrl: true },
+    select: { id: true, name: true, email: true, role: true, phone: true, avatarUrl: true, specialty: true },
+  });
+}
+
+export async function updateSpecialty(userId: string, specialty: string | null) {
+  return prisma.user.update({
+    where: { id: userId },
+    data: { specialty },
+    select: { id: true, name: true, email: true, role: true, phone: true, avatarUrl: true, specialty: true },
   });
 }
 

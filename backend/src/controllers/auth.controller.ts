@@ -29,6 +29,7 @@ function serializeUser(user: {
   role: string;
   phone: string | null;
   avatarUrl?: string | null;
+  specialty?: string | null;
 }) {
   return {
     id: user.id,
@@ -37,6 +38,7 @@ function serializeUser(user: {
     role: user.role,
     phone: user.phone,
     avatarUrl: user.avatarUrl ?? null,
+    specialty: user.specialty ?? null,
   };
 }
 

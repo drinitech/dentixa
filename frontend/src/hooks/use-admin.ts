@@ -16,7 +16,7 @@ export function useAdminDoctors() {
 export function useCreateDoctor() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (input: { name: string; email: string; password: string; phone?: string }) =>
+    mutationFn: (input: { name: string; email: string; password: string; phone?: string; specialty?: string }) =>
       apiFetch<{ doctor: AdminUser }>("/admin/doctors", { method: "POST", body: input }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-doctors"] });
@@ -28,8 +28,16 @@ export function useCreateDoctor() {
 export function useUpdateDoctor() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, ...input }: { id: string; name?: string; phone?: string; isActive?: boolean }) =>
-      apiFetch<{ doctor: AdminUser }>(`/admin/doctors/${id}`, { method: "PATCH", body: input }),
+    mutationFn: ({
+      id,
+      ...input
+    }: {
+      id: string;
+      name?: string;
+      phone?: string;
+      specialty?: string;
+      isActive?: boolean;
+    }) => apiFetch<{ doctor: AdminUser }>(`/admin/doctors/${id}`, { method: "PATCH", body: input }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-doctors"] });
       queryClient.invalidateQueries({ queryKey: ["doctors"] });

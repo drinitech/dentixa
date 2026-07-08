@@ -10,3 +10,10 @@ export function useUpdateAvatar() {
       apiFetch<{ user: User }>("/users/me/avatar", { method: "PATCH", body: { avatarUrl } }),
   });
 }
+
+export function useUpdateSpecialty() {
+  return useMutation({
+    mutationFn: (specialty: string) =>
+      apiFetch<{ user: User }>("/users/me/specialty", { method: "PATCH", body: { specialty: specialty || null } }),
+  });
+}

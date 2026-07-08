@@ -21,3 +21,8 @@ export const updateAvatarSchema = z.object({
     .refine((v) => /^data:image\/(png|jpeg|jpg|webp);base64,/.test(v), "Must be a PNG, JPEG, or WEBP image"),
 });
 export type UpdateAvatarInput = z.infer<typeof updateAvatarSchema>;
+
+export const updateSpecialtySchema = z.object({
+  specialty: z.string().trim().min(2).max(100).nullable(),
+});
+export type UpdateSpecialtyInput = z.infer<typeof updateSpecialtySchema>;

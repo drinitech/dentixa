@@ -17,6 +17,7 @@ const PUBLIC_USER_SELECT = {
   role: true,
   phone: true,
   avatarUrl: true,
+  specialty: true,
   isActive: true,
   createdAt: true,
 } satisfies Prisma.UserSelect;
@@ -27,7 +28,14 @@ export async function createDoctor(input: CreateDoctorInput) {
 
   const passwordHash = await bcrypt.hash(input.password, SALT_ROUNDS);
   const doctor = await prisma.user.create({
-    data: { name: input.name, email: input.email, passwordHash, phone: input.phone, role: "DOCTOR" },
+    data: {
+      name: input.name,
+      email: input.email,
+      passwordHash,
+      phone: input.phone,
+      specialty: input.specialty,
+      role: "DOCTOR",
+    },
     select: PUBLIC_USER_SELECT,
   });
   await seedDefaultNotificationPreferences(doctor.id);

@@ -44,5 +44,6 @@ export const createDoctorSchema = z.object({
   email: z.string().trim().email("Invalid email address"),
   password: z.string().min(8, "Password must be at least 8 characters"),
   phone: z.string().trim().optional().or(z.literal("")),
+  specialty: z.string().trim().optional().or(z.literal("")),
 });
 export type CreateDoctorFormInput = z.infer<typeof createDoctorSchema>;

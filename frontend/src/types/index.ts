@@ -14,6 +14,7 @@ export interface User {
   role: Role;
   phone: string | null;
   avatarUrl: string | null;
+  specialty: string | null;
 }
 
 export interface ClinicService {
@@ -29,6 +30,7 @@ export interface DoctorSummary {
   name: string;
   email: string;
   avatarUrl: string | null;
+  specialty: string | null;
   averageRating?: number | null;
   reviewCount?: number;
 }
@@ -86,6 +88,7 @@ export interface AdminUser {
   role: Role;
   phone: string | null;
   avatarUrl: string | null;
+  specialty: string | null;
   isActive: boolean;
   createdAt: string;
 }
