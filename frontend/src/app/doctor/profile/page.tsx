@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { PageLoading } from "@/components/common/loading-spinner";
+import { ChangePasswordCard } from "@/components/common/change-password-card";
 import { useAuth } from "@/lib/auth-context";
 import { useUpdateSpecialty, useUpdateProfile } from "@/hooks/use-avatar";
 import { useNotificationPreferences, useUpdateNotificationPreferences } from "@/hooks/use-notification-preferences";
@@ -176,6 +177,8 @@ export default function DoctorProfilePage() {
           )}
         </CardContent>
       </Card>
+
+      <ChangePasswordCard />
     </div>
   );
 }

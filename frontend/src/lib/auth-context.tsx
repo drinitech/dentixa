@@ -16,6 +16,7 @@ interface AuthContextValue {
   register: (input: { name: string; email: string; password: string; phone?: string }) => Promise<User>;
   logout: () => Promise<void>;
   patchUser: (patch: Partial<User>) => void;
+  changePassword: (currentPassword: string, newPassword: string) => Promise<User>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -80,8 +81,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser((current) => (current ? { ...current, ...patch } : current));
   }, []);
 
+  const changePassword = useCallback(async (currentPassword: string, newPassword: string) => {
+    const data = await apiFetch<AuthResponse>("/auth/change-password", {
+      method: "PATCH",
+      body: { currentPassword, newPassword },
+    });
+    setAccessToken(data.accessToken);
+    setUser(data.user);
+    return data.user;
+  }, []);
+
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout, patchUser }}>
+    <AuthContext.Provider value={{ user, loading, login, register, logout, patchUser, changePassword }}>
       {children}
     </AuthContext.Provider>
   );

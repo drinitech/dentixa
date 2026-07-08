@@ -33,9 +33,4 @@ userRouter.patch(
   validate(updateSpecialtySchema),
   updateSpecialtyHandler,
 );
-userRouter.patch(
-  "/me/profile",
-  authorize("DOCTOR"),
-  validate(updateProfileSchema),
-  updateProfileHandler,
-);
+userRouter.patch("/me/profile", validate(updateProfileSchema), updateProfileHandler);

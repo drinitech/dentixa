@@ -72,3 +72,19 @@ export const meHandler = asyncHandler(async (req: Request, res: Response) => {
   const user = await prisma.user.findUniqueOrThrow({ where: { id: req.user!.id } });
   res.json({ user: serializeUser(user) });
 });
+
+export const changePasswordHandler = asyncHandler(async (req: Request, res: Response) => {
+  const { user, accessToken, refreshToken } = await authService.changePassword(req.user!.id, req.body);
+  setRefreshCookie(res, refreshToken);
+  res.json({ user: serializeUser(user), accessToken });
+});
+
+export const forgotPasswordHandler = asyncHandler(async (req: Request, res: Response) => {
+  await authService.requestPasswordReset(req.body);
+  res.json({ message: "If an account exists for that email, a reset link has been sent." });
+});
+
+export const resetPasswordHandler = asyncHandler(async (req: Request, res: Response) => {
+  await authService.resetPassword(req.body);
+  res.status(204).send();
+});

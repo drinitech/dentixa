@@ -1,17 +1,24 @@
 "use client";
 
+import { useState } from "react";
 import { toast } from "sonner";
 import { History } from "lucide-react";
 import { PageHeader } from "@/components/common/page-header";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { PageLoading } from "@/components/common/loading-spinner";
 import { EmptyState } from "@/components/common/empty-state";
 import { AppointmentCard } from "@/components/appointments/appointment-card";
 import { AvatarUpload } from "@/components/common/avatar-upload";
+import { ChangePasswordCard } from "@/components/common/change-password-card";
 import { useAuth } from "@/lib/auth-context";
+import { useUpdateProfile } from "@/hooks/use-avatar";
 import { useNotificationPreferences, useUpdateNotificationPreferences } from "@/hooks/use-notification-preferences";
 import { useAppointments } from "@/hooks/use-appointments";
+import { ApiError } from "@/lib/api-client";
 import type { NotificationChannel, NotificationEventType } from "@/types";
 
 const EVENT_LABELS: Partial<Record<NotificationEventType, string>> = {
@@ -28,6 +35,11 @@ export default function ProfilePage() {
   const update = useUpdateNotificationPreferences();
   const { data: historyData, isLoading: historyLoading } = useAppointments({ to: new Date().toISOString().slice(0, 10) });
 
+  const [name, setName] = useState(user?.name ?? "");
+  const [phone, setPhone] = useState(user?.phone ?? "");
+  const [email, setEmail] = useState(user?.email ?? "");
+  const updateProfile = useUpdateProfile();
+
   function isEnabled(channel: NotificationChannel, eventType: NotificationEventType) {
     return data?.preferences.find((p) => p.channel === channel && p.eventType === eventType)?.enabled ?? true;
   }
@@ -37,6 +49,16 @@ export default function ProfilePage() {
       await update.mutateAsync([{ channel, eventType, enabled }]);
     } catch {
       toast.error("Could not update preference");
+    }
+  }
+
+  async function handleSaveProfile() {
+    try {
+      const { user: updated } = await updateProfile.mutateAsync({ name, phone, email });
+      patchUser({ name: updated.name, phone: updated.phone, email: updated.email });
+      toast.success("Contact details updated");
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : "Could not update contact details");
     }
   }
 
@@ -57,6 +79,38 @@ export default function ProfilePage() {
           </CardContent>
         </Card>
       )}
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Contact details</CardTitle>
+          <CardDescription>Your name, phone, and email — used for login and appointment reminders.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="patient-name">Full name</Label>
+              <Input id="patient-name" value={name} onChange={(e) => setName(e.target.value)} maxLength={100} />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="patient-phone">Phone</Label>
+              <Input id="patient-phone" value={phone} onChange={(e) => setPhone(e.target.value)} maxLength={20} />
+            </div>
+            <div className="space-y-1.5 sm:col-span-2">
+              <Label htmlFor="patient-email">Email</Label>
+              <Input
+                id="patient-email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                maxLength={200}
+              />
+            </div>
+          </div>
+          <Button onClick={handleSaveProfile} disabled={updateProfile.isPending}>
+            {updateProfile.isPending ? "Saving…" : "Save"}
+          </Button>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>
@@ -109,6 +163,8 @@ export default function ProfilePage() {
           )}
         </CardContent>
       </Card>
+
+      <ChangePasswordCard />
     </div>
   );
 }

@@ -3,6 +3,7 @@
 import { PageHeader } from "@/components/common/page-header";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { AvatarUpload } from "@/components/common/avatar-upload";
+import { ChangePasswordCard } from "@/components/common/change-password-card";
 import { useAuth } from "@/lib/auth-context";
 
 export default function AdminProfilePage() {
@@ -31,6 +32,8 @@ export default function AdminProfilePage() {
           </div>
         </CardContent>
       </Card>
+
+      <ChangePasswordCard />
     </div>
   );
 }

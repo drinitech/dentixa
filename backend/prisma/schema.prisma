@@ -54,6 +54,11 @@ model User {
   // Bumped on ban / password reset so previously issued refresh tokens
   // are invalidated immediately without a server-side token blacklist table.
   tokenVersion Int      @default(0)
+  // Forgot-password flow: only a hash of the emailed token is stored (never
+  // the raw token), mirroring how a password itself is never stored in the
+  // clear. Null when no reset is pending.
+  passwordResetTokenHash String?   @unique
+  passwordResetExpiresAt DateTime?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
