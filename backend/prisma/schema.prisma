@@ -136,6 +136,10 @@ model Appointment {
   // never sends the same reminder twice for one appointment.
   reminderSentAt DateTime?
 
+  // Doctor-authored clinical notes about the visit (diagnosis, treatment
+  // given). Only the treating doctor can write it; the patient can read it.
+  visitNotes String? @db.Text
+
   review Review?
 
   createdAt DateTime @default(now())

@@ -6,6 +6,7 @@ import {
   createAppointmentSchema,
   rejectAppointmentSchema,
   listAppointmentsQuerySchema,
+  updateVisitNotesSchema,
 } from "../validations/appointment.schema";
 import { createReviewSchema } from "../validations/review.schema";
 import {
@@ -17,6 +18,7 @@ import {
   completeHandler,
   noShowHandler,
   exportHandler,
+  updateVisitNotesHandler,
 } from "../controllers/appointment.controller";
 import { createReviewHandler } from "../controllers/review.controller";
 
@@ -32,6 +34,12 @@ appointmentRouter.patch("/:id/reject", authorize("DOCTOR"), validate(rejectAppoi
 appointmentRouter.patch("/:id/cancel", authorize("PATIENT", "DOCTOR"), cancelHandler);
 appointmentRouter.patch("/:id/complete", authorize("DOCTOR"), completeHandler);
 appointmentRouter.patch("/:id/no-show", authorize("DOCTOR"), noShowHandler);
+appointmentRouter.patch(
+  "/:id/notes",
+  authorize("DOCTOR"),
+  validate(updateVisitNotesSchema),
+  updateVisitNotesHandler,
+);
 appointmentRouter.post(
   "/:id/review",
   authorize("PATIENT"),

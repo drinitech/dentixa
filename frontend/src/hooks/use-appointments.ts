@@ -100,6 +100,21 @@ export function useMarkNoShow() {
   });
 }
 
+export function useUpdateVisitNotes() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, visitNotes }: { id: string; visitNotes: string }) =>
+      apiFetch<{ appointment: Appointment }>(`/appointments/${id}/notes`, {
+        method: "PATCH",
+        body: { visitNotes },
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["appointments"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-appointments"] });
+    },
+  });
+}
+
 export function useCreateReview() {
   const queryClient = useQueryClient();
   return useMutation({

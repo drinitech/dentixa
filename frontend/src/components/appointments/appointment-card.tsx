@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
-import { CalendarDays, CheckCircle2, Clock, Star, Stethoscope, UserX, X } from "lucide-react";
+import { CalendarDays, CheckCircle2, Clock, NotebookPen, Star, Stethoscope, UserX, X } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { StatusBadge } from "./status-badge";
 import { StarRating } from "./star-rating";
@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { formatDate } from "@/lib/utils";
-import { useCreateReview } from "@/hooks/use-appointments";
+import { useCreateReview, useUpdateVisitNotes } from "@/hooks/use-appointments";
 import { ApiError } from "@/lib/api-client";
 import type { Appointment } from "@/types";
 
@@ -38,11 +38,17 @@ export function AppointmentCard({
   const canMarkNoShow = appointment.status === "APPROVED";
   // Only the patient reviews their own visit — showPatient is true for the doctor/admin view.
   const canReview = !showPatient && appointment.status === "DONE" && !appointment.review;
+  // Only the treating doctor writes visit notes — showPatient is true for that view.
+  const canEditNotes = showPatient && (appointment.status === "APPROVED" || appointment.status === "DONE");
 
   const [reviewOpen, setReviewOpen] = useState(false);
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState("");
   const createReview = useCreateReview();
+
+  const [notesOpen, setNotesOpen] = useState(false);
+  const [notesDraft, setNotesDraft] = useState(appointment.visitNotes ?? "");
+  const updateVisitNotes = useUpdateVisitNotes();
 
   async function submitReview() {
     try {
@@ -53,6 +59,16 @@ export function AppointmentCard({
       setComment("");
     } catch (err) {
       toast.error(err instanceof ApiError ? err.message : "Could not submit review");
+    }
+  }
+
+  async function submitNotes() {
+    try {
+      await updateVisitNotes.mutateAsync({ id: appointment.id, visitNotes: notesDraft });
+      toast.success("Notes saved");
+      setNotesOpen(false);
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : "Could not save notes");
     }
   }
 
@@ -91,9 +107,25 @@ export function AppointmentCard({
               <span className="text-xs text-muted-foreground">Your review</span>
             </div>
           )}
+          {!showPatient && appointment.visitNotes && (
+            <p className="text-sm text-muted-foreground">
+              <span className="font-medium text-foreground">Visit notes: </span>
+              {appointment.visitNotes}
+            </p>
+          )}
         </div>
-        {(canComplete && onComplete) || (canMarkNoShow && onNoShow) || (canCancel && onCancel) || canReview ? (
+        {(canComplete && onComplete) ||
+        (canMarkNoShow && onNoShow) ||
+        (canCancel && onCancel) ||
+        canReview ||
+        canEditNotes ? (
           <div className="flex shrink-0 flex-wrap items-center gap-2">
+            {canEditNotes && (
+              <Button variant="outline" size="sm" onClick={() => setNotesOpen(true)}>
+                <NotebookPen className="h-3.5 w-3.5" />
+                {appointment.visitNotes ? "Edit notes" : "Add notes"}
+              </Button>
+            )}
             {canComplete && onComplete && (
               <Button
                 variant="outline"
@@ -153,6 +185,26 @@ export function AppointmentCard({
           />
           <Button className="w-full" onClick={submitReview} disabled={createReview.isPending}>
             {createReview.isPending ? "Submitting…" : "Submit review"}
+          </Button>
+        </div>
+      </Dialog>
+
+      <Dialog
+        open={notesOpen}
+        onOpenChange={setNotesOpen}
+        title="Visit notes"
+        description={`Only you and ${appointment.patient.name} can see these.`}
+      >
+        <div className="space-y-4">
+          <Textarea
+            placeholder="Diagnosis, treatment given, follow-up plan…"
+            value={notesDraft}
+            onChange={(e) => setNotesDraft(e.target.value)}
+            maxLength={2000}
+            rows={6}
+          />
+          <Button className="w-full" onClick={submitNotes} disabled={updateVisitNotes.isPending}>
+            {updateVisitNotes.isPending ? "Saving…" : "Save notes"}
           </Button>
         </div>
       </Dialog>

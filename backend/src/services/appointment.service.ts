@@ -222,6 +222,21 @@ export async function markNoShow(id: string, doctorId: string) {
   });
 }
 
+export async function updateVisitNotes(id: string, doctorId: string, visitNotes: string) {
+  const appt = await prisma.appointment.findUnique({ where: { id } });
+  if (!appt) throw new NotFoundError("Appointment not found");
+  if (appt.doctorId !== doctorId) throw new ForbiddenError();
+  if (appt.status !== "APPROVED" && appt.status !== "DONE") {
+    throw new ConflictError("Notes can only be added to an approved or completed appointment");
+  }
+
+  return prisma.appointment.update({
+    where: { id },
+    data: { visitNotes },
+    include: appointmentInclude,
+  });
+}
+
 interface ApproveResult {
   appointment: Prisma.AppointmentGetPayload<{ include: typeof appointmentInclude }>;
   autoRejected: { id: string; patientId: string }[];

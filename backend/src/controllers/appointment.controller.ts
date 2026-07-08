@@ -86,6 +86,11 @@ export const noShowHandler = asyncHandler(async (req: Request, res: Response) =>
   res.json({ appointment: appt });
 });
 
+export const updateVisitNotesHandler = asyncHandler(async (req: Request, res: Response) => {
+  const appt = await appointmentService.updateVisitNotes(req.params.id, req.user!.id, req.body.visitNotes);
+  res.json({ appointment: appt });
+});
+
 export const exportHandler = asyncHandler(async (req: Request, res: Response) => {
   const role = req.user!.role;
   if (role !== "PATIENT" && role !== "DOCTOR") {

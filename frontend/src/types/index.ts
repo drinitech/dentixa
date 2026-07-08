@@ -78,6 +78,7 @@ export interface Appointment {
   doctor: { id: string; name: string; email: string };
   service: { id: string; name: string; durationMinutes: number; price: string | number | null } | null;
   review: Review | null;
+  visitNotes: string | null;
 }
 
 export interface NotificationPreference {
