@@ -18,7 +18,7 @@ export const rejectAppointmentSchema = z.object({
 export type RejectAppointmentInput = z.infer<typeof rejectAppointmentSchema>;
 
 export const listAppointmentsQuerySchema = z.object({
-  status: z.enum(["PENDING", "APPROVED", "REJECTED", "CANCELLED"]).optional(),
+  status: z.enum(["PENDING", "APPROVED", "REJECTED", "CANCELLED", "DONE"]).optional(),
   from: z.string().regex(dateRegex).optional(),
   to: z.string().regex(dateRegex).optional(),
 });

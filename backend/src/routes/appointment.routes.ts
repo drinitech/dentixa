@@ -13,6 +13,7 @@ import {
   approveHandler,
   rejectHandler,
   cancelHandler,
+  completeHandler,
 } from "../controllers/appointment.controller";
 
 export const appointmentRouter = Router();
@@ -24,3 +25,4 @@ appointmentRouter.get("/", validate(listAppointmentsQuerySchema, "query"), listH
 appointmentRouter.patch("/:id/approve", authorize("DOCTOR"), approveHandler);
 appointmentRouter.patch("/:id/reject", authorize("DOCTOR"), validate(rejectAppointmentSchema), rejectHandler);
 appointmentRouter.patch("/:id/cancel", authorize("PATIENT", "DOCTOR"), cancelHandler);
+appointmentRouter.patch("/:id/complete", authorize("DOCTOR"), completeHandler);

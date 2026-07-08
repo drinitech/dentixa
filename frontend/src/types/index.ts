@@ -1,5 +1,5 @@
 export type Role = "PATIENT" | "DOCTOR" | "ADMIN";
-export type AppointmentStatus = "PENDING" | "APPROVED" | "REJECTED" | "CANCELLED";
+export type AppointmentStatus = "PENDING" | "APPROVED" | "REJECTED" | "CANCELLED" | "DONE";
 export type NotificationChannel = "EMAIL" | "SMS";
 export type NotificationEventType =
   | "APPOINTMENT_CREATED"

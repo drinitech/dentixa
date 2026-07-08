@@ -67,6 +67,20 @@ export function useRejectAppointment() {
   });
 }
 
+export function useCompleteAppointment() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) =>
+      apiFetch<{ appointment: Appointment }>(`/appointments/${id}/complete`, {
+        method: "PATCH",
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["appointments"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-appointments"] });
+    },
+  });
+}
+
 export function useCancelAppointment(options?: { admin?: boolean }) {
   const queryClient = useQueryClient();
   return useMutation({

@@ -22,6 +22,7 @@ enum AppointmentStatus {
   APPROVED
   REJECTED
   CANCELLED
+  DONE
 }
 
 enum NotificationChannel {

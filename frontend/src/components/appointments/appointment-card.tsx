@@ -1,4 +1,4 @@
-import { CalendarDays, Clock, Stethoscope, X } from "lucide-react";
+import { CalendarDays, CheckCircle2, Clock, Stethoscope, X } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { StatusBadge } from "./status-badge";
 import { Button } from "@/components/ui/button";
@@ -9,14 +9,19 @@ export function AppointmentCard({
   appointment,
   onCancel,
   cancelling,
+  onComplete,
+  completing,
   showPatient,
 }: {
   appointment: Appointment;
   onCancel?: (id: string) => void;
   cancelling?: boolean;
+  onComplete?: (id: string) => void;
+  completing?: boolean;
   showPatient?: boolean;
 }) {
   const canCancel = appointment.status === "PENDING" || appointment.status === "APPROVED";
+  const canComplete = appointment.status === "APPROVED";
 
   return (
     <Card>
@@ -48,18 +53,32 @@ export function AppointmentCard({
             <p className="text-sm text-status-rejected-foreground">Reason: {appointment.rejectionReason}</p>
           )}
         </div>
-        {canCancel && onCancel && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => onCancel(appointment.id)}
-            disabled={cancelling}
-            className="shrink-0"
-          >
-            <X className="h-3.5 w-3.5" />
-            Cancel
-          </Button>
-        )}
+        {(canComplete && onComplete) || (canCancel && onCancel) ? (
+          <div className="flex shrink-0 items-center gap-2">
+            {canComplete && onComplete && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => onComplete(appointment.id)}
+                disabled={completing}
+              >
+                <CheckCircle2 className="h-3.5 w-3.5" />
+                Mark done
+              </Button>
+            )}
+            {canCancel && onCancel && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => onCancel(appointment.id)}
+                disabled={cancelling}
+              >
+                <X className="h-3.5 w-3.5" />
+                Cancel
+              </Button>
+            )}
+          </div>
+        ) : null}
       </CardContent>
     </Card>
   );

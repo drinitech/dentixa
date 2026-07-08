@@ -138,13 +138,29 @@ export async function cancelAppointment(id: string, actor: CancelActor) {
     actor.role === "ADMIN";
   if (!owns) throw new ForbiddenError();
 
-  if (appt.status === "CANCELLED" || appt.status === "REJECTED") {
+  if (appt.status === "CANCELLED" || appt.status === "REJECTED" || appt.status === "DONE") {
     throw new ConflictError("This appointment is already inactive");
   }
 
   return prisma.appointment.update({
     where: { id },
     data: { status: "CANCELLED" },
+    include: appointmentInclude,
+  });
+}
+
+// Doctor marks a past, approved appointment as done (the patient's visit
+// actually happened). Frees it from the partial unique index's active set
+// (PENDING/APPROVED) automatically since DONE isn't in that filter.
+export async function completeAppointment(id: string, doctorId: string) {
+  const appt = await prisma.appointment.findUnique({ where: { id } });
+  if (!appt) throw new NotFoundError("Appointment not found");
+  if (appt.doctorId !== doctorId) throw new ForbiddenError();
+  if (appt.status !== "APPROVED") throw new ConflictError("Only approved appointments can be marked done");
+
+  return prisma.appointment.update({
+    where: { id },
+    data: { status: "DONE" },
     include: appointmentInclude,
   });
 }

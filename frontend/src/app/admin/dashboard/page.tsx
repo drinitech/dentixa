@@ -24,6 +24,7 @@ const FILTER_LABEL: Record<Filter, string> = {
   APPROVED: "Approved appointments",
   REJECTED: "Rejected appointments",
   CANCELLED: "Cancelled appointments",
+  DONE: "Done appointments",
   DOCTORS: "Doctors",
 };
 

@@ -41,6 +41,8 @@
   --status-rejected-foreground: oklch(0.35 0.15 20);
   --status-cancelled: oklch(0.88 0.008 240);
   --status-cancelled-foreground: oklch(0.4 0.01 240);
+  --status-done: oklch(0.85 0.1 265);
+  --status-done-foreground: oklch(0.35 0.12 265);
 
   /* Chart series colors — validated with the dataviz palette validator
      (CVD-safe pair, contrast WARN mitigated with direct labels + legend). */
@@ -91,6 +93,8 @@
     --status-rejected-foreground: oklch(0.97 0.02 25);
     --status-cancelled: oklch(0.38 0.012 240);
     --status-cancelled-foreground: oklch(0.9 0.008 240);
+    --status-done: oklch(0.5 0.13 265);
+    --status-done-foreground: oklch(0.97 0.02 265);
 
     --chart-approved: #199e70;
     --chart-rejected: #e66767;
@@ -127,6 +131,8 @@
   --status-rejected-foreground: oklch(0.97 0.02 25);
   --status-cancelled: oklch(0.38 0.012 240);
   --status-cancelled-foreground: oklch(0.9 0.008 240);
+  --status-done: oklch(0.5 0.13 265);
+  --status-done-foreground: oklch(0.97 0.02 265);
   --chart-approved: #199e70;
   --chart-rejected: #e66767;
   --chart-grid: #2c2c2a;
@@ -161,6 +167,8 @@
   --status-rejected-foreground: oklch(0.35 0.15 20);
   --status-cancelled: oklch(0.88 0.008 240);
   --status-cancelled-foreground: oklch(0.4 0.01 240);
+  --status-done: oklch(0.85 0.1 265);
+  --status-done-foreground: oklch(0.35 0.12 265);
   --chart-approved: #1baf7a;
   --chart-rejected: #e34948;
   --chart-grid: #e1e0d9;
@@ -201,6 +209,8 @@
   --color-status-rejected-foreground: var(--status-rejected-foreground);
   --color-status-cancelled: var(--status-cancelled);
   --color-status-cancelled-foreground: var(--status-cancelled-foreground);
+  --color-status-done: var(--status-done);
+  --color-status-done-foreground: var(--status-done-foreground);
 
   --color-chart-approved: var(--chart-approved);
   --color-chart-rejected: var(--chart-rejected);

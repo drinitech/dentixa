@@ -9,7 +9,7 @@ import { EmptyState } from "@/components/common/empty-state";
 import { StatTile } from "@/components/common/stat-tile";
 import { AppointmentCard } from "@/components/appointments/appointment-card";
 import { useDoctorStats } from "@/hooks/use-stats";
-import { useAppointments, useCancelAppointment } from "@/hooks/use-appointments";
+import { useAppointments, useCancelAppointment, useCompleteAppointment } from "@/hooks/use-appointments";
 import { ApiError } from "@/lib/api-client";
 import type { AppointmentStatus } from "@/types";
 
@@ -22,6 +22,7 @@ export default function DoctorStatsPage() {
     filter === "ALL" ? {} : { status: filter },
   );
   const cancelAppointment = useCancelAppointment();
+  const completeAppointment = useCompleteAppointment();
 
   function toggleFilter(next: Filter) {
     setFilter((current) => (current === next ? "ALL" : next));
@@ -33,6 +34,15 @@ export default function DoctorStatsPage() {
       toast.success("Appointment cancelled");
     } catch (err) {
       toast.error(err instanceof ApiError ? err.message : "Could not cancel appointment");
+    }
+  }
+
+  async function handleComplete(id: string) {
+    try {
+      await completeAppointment.mutateAsync(id);
+      toast.success("Appointment marked as done");
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : "Could not mark appointment as done");
     }
   }
 
@@ -82,6 +92,8 @@ export default function DoctorStatsPage() {
                 appointment={appt}
                 onCancel={handleCancel}
                 cancelling={cancelAppointment.isPending}
+                onComplete={handleComplete}
+                completing={completeAppointment.isPending}
                 showPatient
               />
             ))}

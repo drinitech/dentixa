@@ -74,3 +74,8 @@ export const cancelHandler = asyncHandler(async (req: Request, res: Response) =>
   });
   res.json({ appointment: appt });
 });
+
+export const completeHandler = asyncHandler(async (req: Request, res: Response) => {
+  const appt = await appointmentService.completeAppointment(req.params.id, req.user!.id);
+  res.json({ appointment: appt });
+});
