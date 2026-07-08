@@ -1,5 +1,5 @@
 import { prisma } from "../lib/prisma";
-import { minutesToTime, timeToMinutes, rangesOverlap } from "../lib/time";
+import { minutesToTime, timeToMinutes, rangesOverlap, getClinicNow } from "../lib/time";
 import { NotFoundError } from "../errors/NotFoundError";
 
 // Parses a "YYYY-MM-DD" string as a UTC calendar date, matching how it's stored
@@ -24,9 +24,9 @@ export async function getFreeSlots(doctorId: string, date: string, serviceId: st
   ]);
 
   const duration = service.durationMinutes;
-  const now = new Date();
-  const isToday = dateObj.toDateString() === new Date(now.toISOString().slice(0, 10)).toDateString();
-  const nowMinutes = now.getUTCHours() * 60 + now.getUTCMinutes();
+  const clinicNow = getClinicNow();
+  const isToday = date === clinicNow.dateKey;
+  const nowMinutes = clinicNow.minutesOfDay;
 
   const freeSlots: string[] = [];
 

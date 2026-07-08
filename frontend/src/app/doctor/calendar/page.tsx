@@ -8,46 +8,46 @@ import { PageLoading } from "@/components/common/loading-spinner";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { cn, formatDate } from "@/lib/utils";
+import {
+  addDaysToKey,
+  dateKeyDayNumber,
+  dateKeyWeekday,
+  dateKeyWeekdayShort,
+  toClinicDateKey,
+} from "@/lib/clinic-date";
 import { useAppointments } from "@/hooks/use-appointments";
 import type { Appointment } from "@/types";
 
-function startOfWeek(offset: number) {
-  const now = new Date();
-  const day = now.getDay();
-  const d = new Date(now);
-  d.setDate(now.getDate() - day + offset * 7);
-  d.setHours(0, 0, 0, 0);
-  return d;
-}
-
-function toDateOnly(d: Date) {
-  return d.toISOString().slice(0, 10);
-}
-
 export default function DoctorCalendarPage() {
   const [weekOffset, setWeekOffset] = useState(0);
-  const weekStart = useMemo(() => startOfWeek(weekOffset), [weekOffset]);
-  const weekDays = useMemo(
-    () => Array.from({ length: 7 }, (_, i) => new Date(weekStart.getTime() + i * 86400000)),
-    [weekStart],
+
+  const todayKey = useMemo(() => toClinicDateKey(new Date()), []);
+  const weekStartKey = useMemo(() => {
+    const todayWeekday = dateKeyWeekday(todayKey);
+    return addDaysToKey(todayKey, -todayWeekday + weekOffset * 7);
+  }, [todayKey, weekOffset]);
+
+  const weekDayKeys = useMemo(
+    () => Array.from({ length: 7 }, (_, i) => addDaysToKey(weekStartKey, i)),
+    [weekStartKey],
   );
-  const weekEnd = weekDays[6];
+  const weekEndKey = weekDayKeys[6];
 
   const { data, isLoading } = useAppointments({
     status: "APPROVED",
-    from: toDateOnly(weekStart),
-    to: toDateOnly(weekEnd),
+    from: weekStartKey,
+    to: weekEndKey,
   });
 
   const byDay = useMemo(() => {
     const map = new Map<string, Appointment[]>();
-    for (const day of weekDays) map.set(toDateOnly(day), []);
+    for (const key of weekDayKeys) map.set(key, []);
     for (const appt of data?.appointments ?? []) {
       const key = appt.date.slice(0, 10);
       map.get(key)?.push(appt);
     }
     return map;
-  }, [data, weekDays]);
+  }, [data, weekDayKeys]);
 
   return (
     <div className="space-y-6">
@@ -60,7 +60,7 @@ export default function DoctorCalendarPage() {
               <ChevronLeft className="h-4 w-4" />
             </Button>
             <span className="text-sm font-medium text-foreground">
-              {formatDate(weekStart)} – {formatDate(weekEnd)}
+              {formatDate(weekStartKey)} – {formatDate(weekEndKey)}
             </span>
             <Button variant="outline" size="sm" onClick={() => setWeekOffset((w) => w + 1)}>
               <ChevronRight className="h-4 w-4" />
@@ -75,16 +75,15 @@ export default function DoctorCalendarPage() {
         <EmptyState icon={CalendarDays} title="No confirmed appointments this week" />
       ) : (
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-7">
-          {weekDays.map((day) => {
-            const key = toDateOnly(day);
+          {weekDayKeys.map((key) => {
             const appts = byDay.get(key) ?? [];
-            const isToday = key === toDateOnly(new Date());
+            const isToday = key === todayKey;
             return (
               <Card key={key} className={cn("p-3", isToday && "ring-1 ring-primary")}>
                 <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                  {day.toLocaleDateString("en-GB", { weekday: "short" })}
+                  {dateKeyWeekdayShort(key)}
                 </p>
-                <p className="mb-2 text-sm font-semibold text-foreground">{day.getDate()}</p>
+                <p className="mb-2 text-sm font-semibold text-foreground">{dateKeyDayNumber(key)}</p>
                 <div className="space-y-1.5">
                   {appts.length === 0 && <p className="text-xs text-muted-foreground">—</p>}
                   {appts.map((appt) => (

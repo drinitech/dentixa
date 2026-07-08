@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { DoctorPicker } from "@/components/booking/doctor-picker";
 import { ServicePicker } from "@/components/booking/service-picker";
-import { DateStrip } from "@/components/booking/date-strip";
+import { CalendarPicker } from "@/components/booking/calendar-picker";
 import { SlotGrid } from "@/components/booking/slot-grid";
 import { useDoctors, useServices, useSlots } from "@/hooks/use-slots";
 import { useCreateAppointment } from "@/hooks/use-appointments";
@@ -78,13 +78,21 @@ export default function PatientDashboardPage() {
         <CardHeader>
           <CardTitle>3. Choose a date &amp; time</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <DateStrip value={date} onChange={(d) => { setDate(d); setTime(null); }} />
-          {doctorId && serviceId && date ? (
-            <SlotGrid slots={slotsData?.slots} value={time} onChange={setTime} isLoading={slotsLoading} />
-          ) : (
-            <p className="text-sm text-muted-foreground">Pick a doctor, service, and date to see free slots.</p>
-          )}
+        <CardContent className="flex flex-col gap-6 lg:flex-row lg:gap-8">
+          <CalendarPicker
+            value={date}
+            onChange={(d) => {
+              setDate(d);
+              setTime(null);
+            }}
+          />
+          <div className="flex-1 lg:border-l lg:border-border lg:pl-8">
+            {doctorId && serviceId && date ? (
+              <SlotGrid slots={slotsData?.slots} value={time} onChange={setTime} isLoading={slotsLoading} />
+            ) : (
+              <p className="text-sm text-muted-foreground">Pick a doctor, service, and date to see free slots.</p>
+            )}
+          </div>
         </CardContent>
       </Card>
 
