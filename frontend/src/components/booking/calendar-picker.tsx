@@ -11,7 +11,7 @@ import {
   toClinicDateKey,
 } from "@/lib/clinic-date";
 
-const WEEKDAY_HEADERS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const WEEKDAY_HEADERS = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
 
 export function CalendarPicker({
   value,
@@ -56,31 +56,35 @@ export function CalendarPicker({
   const canGoPrev = `${viewYear}-${String(viewMonth + 1).padStart(2, "0")}` > todayKey.slice(0, 7);
 
   return (
-    <div className="w-full max-w-sm">
-      <div className="mb-3 flex items-center justify-between">
+    <div className="w-full max-w-[19rem] rounded-2xl border border-border bg-card p-4 shadow-sm">
+      <div className="mb-4 flex items-center justify-between">
         <button
           type="button"
           onClick={() => goToMonth(-1)}
           disabled={!canGoPrev}
           aria-label="Previous month"
-          className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted disabled:opacity-30 disabled:hover:bg-transparent"
+          className={cn(
+            "flex h-8 w-8 items-center justify-center rounded-full border border-border text-muted-foreground transition-colors",
+            "hover:border-primary/40 hover:bg-accent hover:text-accent-foreground",
+            "disabled:pointer-events-none disabled:opacity-25",
+          )}
         >
           <ChevronLeft className="h-4 w-4" />
         </button>
-        <p className="text-sm font-semibold text-foreground">{monthLabel}</p>
+        <p className="text-base font-semibold tracking-tight text-foreground">{monthLabel}</p>
         <button
           type="button"
           onClick={() => goToMonth(1)}
           aria-label="Next month"
-          className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted"
+          className="flex h-8 w-8 items-center justify-center rounded-full border border-border text-muted-foreground transition-colors hover:border-primary/40 hover:bg-accent hover:text-accent-foreground"
         >
           <ChevronRight className="h-4 w-4" />
         </button>
       </div>
 
-      <div className="grid grid-cols-7 gap-1 text-center">
-        {WEEKDAY_HEADERS.map((w) => (
-          <div key={w} className="py-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+      <div className="grid grid-cols-7 gap-y-1 text-center">
+        {WEEKDAY_HEADERS.map((w, i) => (
+          <div key={`${w}-${i}`} className="pb-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
             {w}
           </div>
         ))}
@@ -95,23 +99,37 @@ export function CalendarPicker({
           const isSelected = key === value;
 
           return (
-            <button
-              key={key}
-              type="button"
-              disabled={isPast}
-              onClick={() => onChange(key)}
-              className={cn(
-                "flex h-10 w-full items-center justify-center rounded-lg text-sm font-medium transition-colors",
-                isPast && "text-muted-foreground/40 cursor-not-allowed",
-                !isPast && !isSelected && "text-foreground hover:bg-muted",
-                isToday && !isSelected && "ring-1 ring-primary/50",
-                isSelected && "bg-primary text-primary-foreground",
-              )}
-            >
-              {day}
-            </button>
+            <div key={key} className="flex items-center justify-center py-0.5">
+              <button
+                type="button"
+                disabled={isPast}
+                onClick={() => onChange(key)}
+                aria-current={isToday ? "date" : undefined}
+                aria-pressed={isSelected}
+                className={cn(
+                  "relative flex h-9 w-9 items-center justify-center rounded-full text-sm font-medium transition-all duration-150",
+                  isPast && "cursor-not-allowed text-muted-foreground/35",
+                  !isPast && !isSelected && "text-foreground hover:scale-105 hover:bg-accent hover:text-accent-foreground",
+                  isSelected && "scale-105 bg-primary font-semibold text-primary-foreground shadow-sm",
+                )}
+              >
+                {day}
+                {isToday && !isSelected && (
+                  <span className="absolute bottom-1 h-1 w-1 rounded-full bg-primary" />
+                )}
+              </button>
+            </div>
           );
         })}
+      </div>
+
+      <div className="mt-4 flex items-center justify-center gap-4 border-t border-border pt-3 text-[11px] text-muted-foreground">
+        <span className="flex items-center gap-1.5">
+          <span className="h-2 w-2 rounded-full bg-primary" /> Selected
+        </span>
+        <span className="flex items-center gap-1.5">
+          <span className="h-2 w-2 rounded-full border border-primary bg-transparent" /> Today
+        </span>
       </div>
     </div>
   );

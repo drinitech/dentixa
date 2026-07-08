@@ -15,6 +15,7 @@ import { useDoctors, useServices, useSlots } from "@/hooks/use-slots";
 import { useCreateAppointment } from "@/hooks/use-appointments";
 import { ApiError } from "@/lib/api-client";
 import { PageLoading } from "@/components/common/loading-spinner";
+import { formatDate, formatDayLabel } from "@/lib/utils";
 
 export default function PatientDashboardPage() {
   const { data: doctorsData, isLoading: doctorsLoading } = useDoctors();
@@ -78,7 +79,7 @@ export default function PatientDashboardPage() {
         <CardHeader>
           <CardTitle>3. Choose a date &amp; time</CardTitle>
         </CardHeader>
-        <CardContent className="flex flex-col gap-6 lg:flex-row lg:gap-8">
+        <CardContent className="flex flex-col items-start gap-6 lg:flex-row lg:gap-8">
           <CalendarPicker
             value={date}
             onChange={(d) => {
@@ -86,11 +87,20 @@ export default function PatientDashboardPage() {
               setTime(null);
             }}
           />
-          <div className="flex-1 lg:border-l lg:border-border lg:pl-8">
+          <div className="w-full flex-1 lg:border-l lg:border-border lg:pl-8">
             {doctorId && serviceId && date ? (
-              <SlotGrid slots={slotsData?.slots} value={time} onChange={setTime} isLoading={slotsLoading} />
+              <>
+                <p className="mb-3 text-sm font-medium text-foreground">
+                  Available times — {formatDayLabel(date)}, {formatDate(date)}
+                </p>
+                <SlotGrid slots={slotsData?.slots} value={time} onChange={setTime} isLoading={slotsLoading} />
+              </>
             ) : (
-              <p className="text-sm text-muted-foreground">Pick a doctor, service, and date to see free slots.</p>
+              <div className="flex h-full min-h-[12rem] items-center justify-center rounded-xl border border-dashed border-border px-6 text-center">
+                <p className="text-sm text-muted-foreground">
+                  Pick a doctor, service, and date on the left to see available times.
+                </p>
+              </div>
             )}
           </div>
         </CardContent>
