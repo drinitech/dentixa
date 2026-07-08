@@ -2,19 +2,22 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
-import { Plus, Stethoscope } from "lucide-react";
+import { Pencil, Plus, Stethoscope } from "lucide-react";
 import { PageHeader } from "@/components/common/page-header";
 import { EmptyState } from "@/components/common/empty-state";
 import { PageLoading } from "@/components/common/loading-spinner";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { DoctorForm } from "@/components/admin/doctor-form";
+import { EditDoctorDialog } from "@/components/admin/edit-doctor-dialog";
 import { Avatar } from "@/components/common/avatar";
 import { useAdminDoctors, useUpdateDoctor } from "@/hooks/use-admin";
 import { ApiError } from "@/lib/api-client";
+import type { AdminUser } from "@/types";
 
 export default function AdminDoctorsPage() {
   const [formOpen, setFormOpen] = useState(false);
+  const [editingDoctor, setEditingDoctor] = useState<AdminUser | null>(null);
   const { data, isLoading } = useAdminDoctors();
   const updateDoctor = useUpdateDoctor();
 
@@ -67,6 +70,10 @@ export default function AdminDoctorsPage() {
                   >
                     {doctor.isActive ? "Active" : "Deactivated"}
                   </span>
+                  <Button variant="outline" size="sm" onClick={() => setEditingDoctor(doctor)}>
+                    <Pencil className="h-3.5 w-3.5" />
+                    Edit
+                  </Button>
                   <Button variant="outline" size="sm" onClick={() => toggleActive(doctor.id, doctor.isActive)}>
                     {doctor.isActive ? "Deactivate" : "Reactivate"}
                   </Button>
@@ -80,6 +87,7 @@ export default function AdminDoctorsPage() {
       )}
 
       <DoctorForm open={formOpen} onOpenChange={setFormOpen} />
+      <EditDoctorDialog doctor={editingDoctor} onOpenChange={(open) => !open && setEditingDoctor(null)} />
     </div>
   );
 }

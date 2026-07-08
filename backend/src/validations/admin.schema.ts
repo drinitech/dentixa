@@ -11,6 +11,7 @@ export type CreateDoctorInput = z.infer<typeof createDoctorSchema>;
 
 export const updateDoctorSchema = z.object({
   name: z.string().trim().min(2).max(100).optional(),
+  email: z.string().trim().toLowerCase().email().optional(),
   phone: z.string().trim().min(6).max(20).optional(),
   specialty: z.string().trim().min(2).max(100).optional(),
   isActive: z.boolean().optional(),

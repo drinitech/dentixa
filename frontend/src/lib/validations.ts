@@ -47,3 +47,11 @@ export const createDoctorSchema = z.object({
   specialty: z.string().trim().optional().or(z.literal("")),
 });
 export type CreateDoctorFormInput = z.infer<typeof createDoctorSchema>;
+
+export const editDoctorSchema = z.object({
+  name: z.string().trim().min(2, "Name is required"),
+  email: z.string().trim().email("Invalid email address"),
+  phone: z.string().trim().optional().or(z.literal("")),
+  specialty: z.string().trim().optional().or(z.literal("")),
+});
+export type EditDoctorFormInput = z.infer<typeof editDoctorSchema>;

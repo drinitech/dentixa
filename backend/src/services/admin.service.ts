@@ -54,6 +54,13 @@ export async function updateDoctor(id: string, input: UpdateDoctorInput) {
   const doctor = await prisma.user.findUnique({ where: { id } });
   if (!doctor || doctor.role !== "DOCTOR") throw new NotFoundError("Doctor not found");
 
+  if (input.email) {
+    const existing = await prisma.user.findUnique({ where: { email: input.email } });
+    if (existing && existing.id !== id) {
+      throw new BadRequestError("An account with this email already exists");
+    }
+  }
+
   return prisma.user.update({
     where: { id },
     data: {

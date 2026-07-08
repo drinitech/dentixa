@@ -21,3 +21,8 @@ export const updateSpecialtyHandler = asyncHandler(async (req: Request, res: Res
   const user = await userService.updateSpecialty(req.user!.id, req.body.specialty);
   res.json({ user });
 });
+
+export const updateProfileHandler = asyncHandler(async (req: Request, res: Response) => {
+  const user = await userService.updateProfile(req.user!.id, req.body);
+  res.json({ user });
+});

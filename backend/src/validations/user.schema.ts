@@ -26,3 +26,10 @@ export const updateSpecialtySchema = z.object({
   specialty: z.string().trim().min(2).max(100).nullable(),
 });
 export type UpdateSpecialtyInput = z.infer<typeof updateSpecialtySchema>;
+
+export const updateProfileSchema = z.object({
+  name: z.string().trim().min(2).max(100).optional(),
+  phone: z.string().trim().min(6).max(20).optional(),
+  email: z.string().trim().toLowerCase().email().optional(),
+});
+export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;

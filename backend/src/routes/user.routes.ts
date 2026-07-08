@@ -6,12 +6,14 @@ import {
   updateNotificationPreferencesSchema,
   updateAvatarSchema,
   updateSpecialtySchema,
+  updateProfileSchema,
 } from "../validations/user.schema";
 import {
   getNotificationPreferencesHandler,
   updateNotificationPreferencesHandler,
   updateAvatarHandler,
   updateSpecialtyHandler,
+  updateProfileHandler,
 } from "../controllers/user.controller";
 
 export const userRouter = Router();
@@ -30,4 +32,10 @@ userRouter.patch(
   authorize("DOCTOR"),
   validate(updateSpecialtySchema),
   updateSpecialtyHandler,
+);
+userRouter.patch(
+  "/me/profile",
+  authorize("DOCTOR"),
+  validate(updateProfileSchema),
+  updateProfileHandler,
 );

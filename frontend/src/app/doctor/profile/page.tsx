@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { PageLoading } from "@/components/common/loading-spinner";
 import { useAuth } from "@/lib/auth-context";
-import { useUpdateSpecialty } from "@/hooks/use-avatar";
+import { useUpdateSpecialty, useUpdateProfile } from "@/hooks/use-avatar";
 import { useNotificationPreferences, useUpdateNotificationPreferences } from "@/hooks/use-notification-preferences";
 import { ApiError } from "@/lib/api-client";
 import type { NotificationChannel, NotificationEventType } from "@/types";
@@ -28,6 +28,10 @@ export default function DoctorProfilePage() {
   const { user, patchUser } = useAuth();
   const [specialty, setSpecialty] = useState(user?.specialty ?? "");
   const updateSpecialty = useUpdateSpecialty();
+  const [name, setName] = useState(user?.name ?? "");
+  const [phone, setPhone] = useState(user?.phone ?? "");
+  const [email, setEmail] = useState(user?.email ?? "");
+  const updateProfile = useUpdateProfile();
   const { data: prefsData, isLoading: prefsLoading } = useNotificationPreferences();
   const updatePrefs = useUpdateNotificationPreferences();
 
@@ -40,6 +44,16 @@ export default function DoctorProfilePage() {
       toast.success("Specialty updated");
     } catch (err) {
       toast.error(err instanceof ApiError ? err.message : "Could not update specialty");
+    }
+  }
+
+  async function handleSaveProfile() {
+    try {
+      const { user: updated } = await updateProfile.mutateAsync({ name, phone, email });
+      patchUser({ name: updated.name, phone: updated.phone, email: updated.email });
+      toast.success("Contact details updated");
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : "Could not update contact details");
     }
   }
 
@@ -74,6 +88,38 @@ export default function DoctorProfilePage() {
             <p className="text-sm font-medium text-foreground">{user.name}</p>
             <p className="text-sm text-muted-foreground">{user.email}</p>
           </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Contact details</CardTitle>
+          <CardDescription>Your name, phone, and email — used for login and clinic communication.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="doctor-name">Full name</Label>
+              <Input id="doctor-name" value={name} onChange={(e) => setName(e.target.value)} maxLength={100} />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="doctor-phone">Phone</Label>
+              <Input id="doctor-phone" value={phone} onChange={(e) => setPhone(e.target.value)} maxLength={20} />
+            </div>
+            <div className="space-y-1.5 sm:col-span-2">
+              <Label htmlFor="doctor-email">Email</Label>
+              <Input
+                id="doctor-email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                maxLength={200}
+              />
+            </div>
+          </div>
+          <Button onClick={handleSaveProfile} disabled={updateProfile.isPending}>
+            {updateProfile.isPending ? "Saving…" : "Save"}
+          </Button>
         </CardContent>
       </Card>
 

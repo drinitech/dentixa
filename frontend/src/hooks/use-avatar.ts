@@ -17,3 +17,10 @@ export function useUpdateSpecialty() {
       apiFetch<{ user: User }>("/users/me/specialty", { method: "PATCH", body: { specialty: specialty || null } }),
   });
 }
+
+export function useUpdateProfile() {
+  return useMutation({
+    mutationFn: (input: { name?: string; phone?: string; email?: string }) =>
+      apiFetch<{ user: User }>("/users/me/profile", { method: "PATCH", body: input }),
+  });
+}
