@@ -81,6 +81,13 @@ export interface Appointment {
   visitNotes: string | null;
 }
 
+export interface WaitlistEntry {
+  id: string;
+  date: string;
+  doctor: { id: string; name: string };
+  service: { id: string; name: string };
+}
+
 export interface NotificationPreference {
   id: string;
   channel: NotificationChannel;

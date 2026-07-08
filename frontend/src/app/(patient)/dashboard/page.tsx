@@ -13,6 +13,7 @@ import { CalendarPicker } from "@/components/booking/calendar-picker";
 import { SlotGrid } from "@/components/booking/slot-grid";
 import { useDoctors, useServices, useSlots } from "@/hooks/use-slots";
 import { useCreateAppointment } from "@/hooks/use-appointments";
+import { useJoinWaitlist, useMyWaitlist } from "@/hooks/use-waitlist";
 import { ApiError } from "@/lib/api-client";
 import { PageLoading } from "@/components/common/loading-spinner";
 import { formatDate, formatDayLabel } from "@/lib/utils";
@@ -40,11 +41,23 @@ export default function PatientDashboardPage() {
     serviceId ?? undefined,
   );
   const createAppointment = useCreateAppointment();
+  const { data: waitlistData } = useMyWaitlist();
+  const joinWaitlist = useJoinWaitlist();
 
   if (doctorsLoading || servicesLoading) return <PageLoading />;
 
   const doctors = doctorsData?.doctors ?? [];
   const services = servicesData?.services ?? [];
+
+  const noSlotsThisDay = Boolean(doctorId && serviceId && date && !slotsLoading && slotsData?.slots.length === 0);
+  const alreadyWaitlisted = Boolean(
+    doctorId &&
+      serviceId &&
+      date &&
+      waitlistData?.entries.some(
+        (e) => e.doctor.id === doctorId && e.service.id === serviceId && e.date.slice(0, 10) === date,
+      ),
+  );
 
   async function handleSubmit() {
     if (!doctorId || !serviceId || !date || !time) return;
@@ -55,6 +68,16 @@ export default function PatientDashboardPage() {
       setReason("");
     } catch (err) {
       toast.error(err instanceof ApiError ? err.message : "Could not create appointment");
+    }
+  }
+
+  async function handleJoinWaitlist() {
+    if (!doctorId || !serviceId || !date) return;
+    try {
+      await joinWaitlist.mutateAsync({ doctorId, serviceId, date });
+      toast.success("Added to the waitlist — we'll email you if a slot opens up.");
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : "Could not join the waitlist");
     }
   }
 
@@ -101,6 +124,17 @@ export default function PatientDashboardPage() {
                   Available times — {formatDayLabel(date)}, {formatDate(date)}
                 </p>
                 <SlotGrid slots={slotsData?.slots} value={time} onChange={setTime} isLoading={slotsLoading} />
+                {noSlotsThisDay && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="mt-3"
+                    onClick={handleJoinWaitlist}
+                    disabled={joinWaitlist.isPending || alreadyWaitlisted}
+                  >
+                    {alreadyWaitlisted ? "Already on the waitlist" : "Notify me if a slot opens up"}
+                  </Button>
+                )}
               </>
             ) : (
               <div className="flex h-full min-h-[12rem] items-center justify-center rounded-xl border border-dashed border-border px-6 text-center">

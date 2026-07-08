@@ -2,6 +2,7 @@ import type { Request, Response } from "express";
 import { asyncHandler } from "../lib/asyncHandler";
 import * as appointmentService from "../services/appointment.service";
 import { notify } from "../services/notification.service";
+import { notifyWaitlistIfSlotsOpened } from "../services/waitlist.service";
 import { buildAppointmentsWorkbook } from "../lib/excel";
 import { BadRequestError } from "../errors/BadRequestError";
 
@@ -64,6 +65,7 @@ export const rejectHandler = asyncHandler(async (req: Request, res: Response) =>
     emailBody: `Your appointment request on ${appt.date.toISOString().slice(0, 10)} at ${appt.time} was declined.${appt.rejectionReason ? ` Reason: ${appt.rejectionReason}` : ""}`,
     smsBody: `Dentixa: your appointment request on ${appt.date.toISOString().slice(0, 10)} at ${appt.time} was declined.`,
   });
+  await notifyWaitlistIfSlotsOpened(appt.doctorId, appt.date.toISOString().slice(0, 10));
 
   res.json({ appointment: appt });
 });
@@ -73,6 +75,7 @@ export const cancelHandler = asyncHandler(async (req: Request, res: Response) =>
     id: req.user!.id,
     role: req.user!.role as "PATIENT" | "DOCTOR" | "ADMIN",
   });
+  await notifyWaitlistIfSlotsOpened(appt.doctorId, appt.date.toISOString().slice(0, 10));
   res.json({ appointment: appt });
 });
 

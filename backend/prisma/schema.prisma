@@ -73,6 +73,8 @@ model User {
   // compatible default) — assigning any service switches that doctor to an
   // opt-in allowlist.
   offeredServices         ClinicService[]           @relation("DoctorServices")
+  waitlistAsPatient       Waitlist[]                @relation("PatientWaitlist")
+  waitlistAsDoctor        Waitlist[]                @relation("DoctorWaitlist")
 
   @@index([role])
 }
@@ -86,8 +88,9 @@ model ClinicService {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
-  appointments    Appointment[]
-  offeredByDoctors User[]       @relation("DoctorServices")
+  appointments      Appointment[]
+  offeredByDoctors  User[]       @relation("DoctorServices")
+  waitlistEntries   Waitlist[]
 }
 
 model DoctorSchedule {
@@ -118,6 +121,24 @@ model ScheduleException {
 
   @@unique([doctorId, date])
   @@index([doctorId])
+}
+
+// A patient asking to be emailed if a slot opens up for a doctor+service+date
+// that currently has none. Cleared (deleted) once notified — a one-shot ping,
+// not a standing subscription, since slots fill fast.
+model Waitlist {
+  id        String   @id @default(cuid())
+  patientId String
+  patient   User     @relation("PatientWaitlist", fields: [patientId], references: [id], onDelete: Cascade)
+  doctorId  String
+  doctor    User     @relation("DoctorWaitlist", fields: [doctorId], references: [id], onDelete: Cascade)
+  serviceId String
+  service   ClinicService @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  date      DateTime @db.Date
+  createdAt DateTime @default(now())
+
+  @@unique([patientId, doctorId, serviceId, date])
+  @@index([doctorId, date])
 }
 
 model Appointment {

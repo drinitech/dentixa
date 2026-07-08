@@ -4,6 +4,7 @@ import * as adminService from "../services/admin.service";
 import * as appointmentService from "../services/appointment.service";
 import * as clinicServiceService from "../services/clinicService.service";
 import * as statsService from "../services/stats.service";
+import { notifyWaitlistIfSlotsOpened } from "../services/waitlist.service";
 import { buildAppointmentsWorkbook } from "../lib/excel";
 
 export const createDoctorHandler = asyncHandler(async (req: Request, res: Response) => {
@@ -80,6 +81,7 @@ export const overrideCancelAppointmentHandler = asyncHandler(async (req: Request
     id: req.user!.id,
     role: "ADMIN",
   });
+  await notifyWaitlistIfSlotsOpened(appt.doctorId, appt.date.toISOString().slice(0, 10));
   res.json({ appointment: appt });
 });
 

@@ -6,6 +6,7 @@ import { serviceRouter } from "./service.routes";
 import { userRouter } from "./user.routes";
 import { doctorRouter } from "./doctor.routes";
 import { adminRouter } from "./admin.routes";
+import { waitlistRouter } from "./waitlist.routes";
 
 export const router = Router();
 
@@ -16,3 +17,4 @@ router.use("/services", serviceRouter);
 router.use("/users", userRouter);
 router.use("/doctors", doctorRouter);
 router.use("/admin", adminRouter);
+router.use("/waitlist", waitlistRouter);
