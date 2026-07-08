@@ -9,6 +9,8 @@ interface ListParams {
   from?: string;
   to?: string;
   doctorId?: string;
+  page?: number;
+  pageSize?: number;
 }
 
 function toQueryString(params: ListParams) {
@@ -24,7 +26,10 @@ export function useAppointments(params: ListParams = {}, options?: { admin?: boo
   const path = options?.admin ? "/admin/appointments" : "/appointments";
   return useQuery({
     queryKey: [options?.admin ? "admin-appointments" : "appointments", params],
-    queryFn: () => apiFetch<{ appointments: Appointment[] }>(`${path}${toQueryString(params)}`),
+    queryFn: () =>
+      apiFetch<{ appointments: Appointment[]; total: number; page: number; pageSize: number }>(
+        `${path}${toQueryString(params)}`,
+      ),
     enabled: options?.enabled ?? true,
   });
 }

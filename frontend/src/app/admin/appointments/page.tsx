@@ -7,6 +7,7 @@ import { PageHeader } from "@/components/common/page-header";
 import { EmptyState } from "@/components/common/empty-state";
 import { PageLoading } from "@/components/common/loading-spinner";
 import { AppointmentsTable } from "@/components/admin/appointments-table";
+import { Pagination } from "@/components/common/pagination";
 import { Select } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { useAppointments, useCancelAppointment } from "@/hooks/use-appointments";
@@ -14,18 +15,33 @@ import { useDoctors } from "@/hooks/use-slots";
 import { ApiError } from "@/lib/api-client";
 import type { AppointmentStatus } from "@/types";
 
+const PAGE_SIZE = 20;
+
 export default function AdminAppointmentsPage() {
   const [status, setStatus] = useState<AppointmentStatus | "">("");
   const [doctorId, setDoctorId] = useState("");
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
+  const [page, setPage] = useState(1);
 
   const { data: doctorsData } = useDoctors();
   const { data, isLoading } = useAppointments(
-    { status: status || undefined, doctorId: doctorId || undefined, from: from || undefined, to: to || undefined },
+    {
+      status: status || undefined,
+      doctorId: doctorId || undefined,
+      from: from || undefined,
+      to: to || undefined,
+      page,
+      pageSize: PAGE_SIZE,
+    },
     { admin: true },
   );
   const cancelAppointment = useCancelAppointment({ admin: true });
+
+  function updateFilter<T>(setter: (value: T) => void, value: T) {
+    setter(value);
+    setPage(1);
+  }
 
   async function handleCancel(id: string) {
     try {
@@ -41,7 +57,7 @@ export default function AdminAppointmentsPage() {
       <PageHeader title="All appointments" description="Clinic-wide view, with override cancel for emergencies." />
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <Select value={doctorId} onChange={(e) => setDoctorId(e.target.value)}>
+        <Select value={doctorId} onChange={(e) => updateFilter(setDoctorId, e.target.value)}>
           <option value="">All doctors</option>
           {doctorsData?.doctors.map((d) => (
             <option key={d.id} value={d.id}>
@@ -49,7 +65,7 @@ export default function AdminAppointmentsPage() {
             </option>
           ))}
         </Select>
-        <Select value={status} onChange={(e) => setStatus(e.target.value as AppointmentStatus | "")}>
+        <Select value={status} onChange={(e) => updateFilter(setStatus, e.target.value as AppointmentStatus | "")}>
           <option value="">All statuses</option>
           <option value="PENDING">Pending</option>
           <option value="APPROVED">Approved</option>
@@ -58,18 +74,21 @@ export default function AdminAppointmentsPage() {
           <option value="DONE">Done</option>
           <option value="NO_SHOW">No-show</option>
         </Select>
-        <Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} />
-        <Input type="date" value={to} onChange={(e) => setTo(e.target.value)} />
+        <Input type="date" value={from} onChange={(e) => updateFilter(setFrom, e.target.value)} />
+        <Input type="date" value={to} onChange={(e) => updateFilter(setTo, e.target.value)} />
       </div>
 
       {isLoading ? (
         <PageLoading />
       ) : data && data.appointments.length > 0 ? (
-        <AppointmentsTable
-          appointments={data.appointments}
-          onCancel={handleCancel}
-          cancelling={cancelAppointment.isPending}
-        />
+        <>
+          <AppointmentsTable
+            appointments={data.appointments}
+            onCancel={handleCancel}
+            cancelling={cancelAppointment.isPending}
+          />
+          <Pagination page={data.page} pageSize={data.pageSize} total={data.total} onPageChange={setPage} />
+        </>
       ) : (
         <EmptyState icon={CalendarX2} title="No appointments match these filters" />
       )}

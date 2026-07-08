@@ -46,11 +46,11 @@ export const deleteUserHandler = asyncHandler(async (req: Request, res: Response
 });
 
 export const globalAppointmentsHandler = asyncHandler(async (req: Request, res: Response) => {
-  const appointments = await appointmentService.listAppointments(
+  const result = await appointmentService.listAppointments(
     { role: "ADMIN", userId: req.user!.id },
     req.query as any,
   );
-  res.json({ appointments });
+  res.json(result);
 });
 
 export const overrideCancelAppointmentHandler = asyncHandler(async (req: Request, res: Response) => {

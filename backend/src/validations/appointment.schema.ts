@@ -21,6 +21,8 @@ export const listAppointmentsQuerySchema = z.object({
   status: z.enum(["PENDING", "APPROVED", "REJECTED", "CANCELLED", "DONE", "NO_SHOW"]).optional(),
   from: z.string().regex(dateRegex).optional(),
   to: z.string().regex(dateRegex).optional(),
+  page: z.coerce.number().int().min(1).default(1),
+  pageSize: z.coerce.number().int().min(1).max(100).default(50),
 });
 export type ListAppointmentsQuery = z.infer<typeof listAppointmentsQuerySchema>;
 

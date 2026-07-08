@@ -21,11 +21,11 @@ export const listHandler = asyncHandler(async (req: Request, res: Response) => {
   if (role !== "PATIENT" && role !== "DOCTOR") {
     throw new BadRequestError("Use /admin/appointments for a global view");
   }
-  const appointments = await appointmentService.listAppointments(
+  const result = await appointmentService.listAppointments(
     { role, userId: req.user!.id },
     req.query as any,
   );
-  res.json({ appointments });
+  res.json(result);
 });
 
 export const approveHandler = asyncHandler(async (req: Request, res: Response) => {

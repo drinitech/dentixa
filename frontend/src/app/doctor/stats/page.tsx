@@ -8,6 +8,7 @@ import { PageLoading } from "@/components/common/loading-spinner";
 import { EmptyState } from "@/components/common/empty-state";
 import { StatTile } from "@/components/common/stat-tile";
 import { AppointmentCard } from "@/components/appointments/appointment-card";
+import { Pagination } from "@/components/common/pagination";
 import { useDoctorStats } from "@/hooks/use-stats";
 import {
   useAppointments,
@@ -20,12 +21,14 @@ import { STATUS_LABELS } from "@/lib/utils";
 import type { AppointmentStatus } from "@/types";
 
 type Filter = AppointmentStatus | "ALL";
+const PAGE_SIZE = 10;
 
 export default function DoctorStatsPage() {
   const { data, isLoading } = useDoctorStats();
   const [filter, setFilter] = useState<Filter>("ALL");
+  const [page, setPage] = useState(1);
   const { data: appointmentsData, isLoading: appointmentsLoading } = useAppointments(
-    filter === "ALL" ? {} : { status: filter },
+    filter === "ALL" ? { page, pageSize: PAGE_SIZE } : { status: filter, page, pageSize: PAGE_SIZE },
   );
   const cancelAppointment = useCancelAppointment();
   const completeAppointment = useCompleteAppointment();
@@ -33,6 +36,7 @@ export default function DoctorStatsPage() {
 
   function toggleFilter(next: Filter) {
     setFilter((current) => (current === next ? "ALL" : next));
+    setPage(1);
   }
 
   async function handleCancel(id: string) {
@@ -115,21 +119,29 @@ export default function DoctorStatsPage() {
         {appointmentsLoading ? (
           <PageLoading />
         ) : appointmentsData && appointmentsData.appointments.length > 0 ? (
-          <div className="space-y-3">
-            {appointmentsData.appointments.map((appt) => (
-              <AppointmentCard
-                key={appt.id}
-                appointment={appt}
-                onCancel={handleCancel}
-                cancelling={cancelAppointment.isPending}
-                onComplete={handleComplete}
-                completing={completeAppointment.isPending}
-                onNoShow={handleNoShow}
-                markingNoShow={markNoShow.isPending}
-                showPatient
-              />
-            ))}
-          </div>
+          <>
+            <div className="space-y-3">
+              {appointmentsData.appointments.map((appt) => (
+                <AppointmentCard
+                  key={appt.id}
+                  appointment={appt}
+                  onCancel={handleCancel}
+                  cancelling={cancelAppointment.isPending}
+                  onComplete={handleComplete}
+                  completing={completeAppointment.isPending}
+                  onNoShow={handleNoShow}
+                  markingNoShow={markNoShow.isPending}
+                  showPatient
+                />
+              ))}
+            </div>
+            <Pagination
+              page={appointmentsData.page}
+              pageSize={appointmentsData.pageSize}
+              total={appointmentsData.total}
+              onPageChange={setPage}
+            />
+          </>
         ) : (
           <EmptyState icon={CalendarX2} title="No appointments match this filter" />
         )}

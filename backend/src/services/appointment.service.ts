@@ -104,11 +104,18 @@ export async function listAppointments(
     };
   }
 
-  return prisma.appointment.findMany({
-    where,
-    include: appointmentInclude,
-    orderBy: [{ date: "asc" }, { time: "asc" }],
-  });
+  const [appointments, total] = await Promise.all([
+    prisma.appointment.findMany({
+      where,
+      include: appointmentInclude,
+      orderBy: [{ date: "asc" }, { time: "asc" }],
+      skip: (query.page - 1) * query.pageSize,
+      take: query.pageSize,
+    }),
+    prisma.appointment.count({ where }),
+  ]);
+
+  return { appointments, total, page: query.page, pageSize: query.pageSize };
 }
 
 export async function rejectAppointment(id: string, doctorId: string, rejectionReason?: string) {
