@@ -1,0 +1,126 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+// Plain TCP connection (no Neon HTTP adapter) — the backend is a long-running
+// Express process, not a serverless function, so it can hold a pooled
+// connection and use real interactive transactions / row locks.
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum Role {
+  PATIENT
+  DOCTOR
+  ADMIN
+}
+
+enum AppointmentStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+enum NotificationChannel {
+  EMAIL
+  SMS
+}
+
+enum NotificationEventType {
+  APPOINTMENT_CREATED
+  APPOINTMENT_APPROVED
+  APPOINTMENT_REJECTED
+  REMINDER
+}
+
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         Role     @default(PATIENT)
+  phone        String?
+  isActive     Boolean  @default(true)
+  // Bumped on ban / password reset so previously issued refresh tokens
+  // are invalidated immediately without a server-side token blacklist table.
+  tokenVersion Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  doctorSchedules         DoctorSchedule[]          @relation("DoctorSchedules")
+  appointmentsAsPatient   Appointment[]             @relation("PatientAppointments")
+  appointmentsAsDoctor    Appointment[]             @relation("DoctorAppointments")
+  notificationPreferences NotificationPreference[]
+
+  @@index([role])
+}
+
+model ClinicService {
+  id              String   @id @default(cuid())
+  name            String
+  durationMinutes Int
+  price           Decimal? @db.Decimal(10, 2)
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  appointments Appointment[]
+}
+
+model DoctorSchedule {
+  id        String   @id @default(cuid())
+  doctorId  String
+  doctor    User     @relation("DoctorSchedules", fields: [doctorId], references: [id], onDelete: Cascade)
+  dayOfWeek Int // 0 = Sunday .. 6 = Saturday
+  startTime String // "09:00" 24h
+  endTime   String // "17:00" 24h
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([doctorId, dayOfWeek, startTime, endTime])
+  @@index([doctorId])
+}
+
+model Appointment {
+  id       String @id @default(cuid())
+  patientId String
+  patient   User   @relation("PatientAppointments", fields: [patientId], references: [id], onDelete: Cascade)
+  doctorId  String
+  doctor    User   @relation("DoctorAppointments", fields: [doctorId], references: [id], onDelete: Cascade)
+
+  serviceId String?
+  service   ClinicService? @relation(fields: [serviceId], references: [id])
+
+  date            DateTime          @db.Date
+  time            String // "14:30" 24h — paired with date+doctorId for slot identity
+  durationMinutes Int
+  status          AppointmentStatus @default(PENDING)
+  reason          String?
+  rejectionReason String?
+
+  // Set once the 24h-before reminder has been sent, so the hourly sweep
+  // never sends the same reminder twice for one appointment.
+  reminderSentAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([doctorId, date])
+  @@index([patientId])
+  @@index([status])
+  @@index([date])
+}
+
+model NotificationPreference {
+  id        String                @id @default(cuid())
+  userId    String
+  user      User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  channel   NotificationChannel
+  eventType NotificationEventType
+  enabled   Boolean               @default(true)
+
+  @@unique([userId, channel, eventType])
+}
