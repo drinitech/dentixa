@@ -1,5 +1,13 @@
+import { Prisma } from "@prisma/client";
 import { prisma } from "../lib/prisma";
-import type { ReplaceScheduleInput } from "../validations/schedule.schema";
+import { ConflictError } from "../errors/ConflictError";
+import { ForbiddenError } from "../errors/ForbiddenError";
+import { NotFoundError } from "../errors/NotFoundError";
+import type { ReplaceScheduleInput, CreateExceptionInput } from "../validations/schedule.schema";
+
+function parseDateOnly(date: string): Date {
+  return new Date(`${date}T00:00:00.000Z`);
+}
 
 export async function getSchedule(doctorId: string) {
   return prisma.doctorSchedule.findMany({
@@ -22,4 +30,32 @@ export async function replaceSchedule(doctorId: string, input: ReplaceScheduleIn
       orderBy: [{ dayOfWeek: "asc" }, { startTime: "asc" }],
     });
   });
+}
+
+export async function listExceptions(doctorId: string) {
+  return prisma.scheduleException.findMany({
+    where: { doctorId },
+    orderBy: { date: "asc" },
+  });
+}
+
+export async function addException(doctorId: string, input: CreateExceptionInput) {
+  try {
+    return await prisma.scheduleException.create({
+      data: { doctorId, date: parseDateOnly(input.date), reason: input.reason },
+    });
+  } catch (err) {
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
+      throw new ConflictError("That date is already marked as time off");
+    }
+    throw err;
+  }
+}
+
+export async function removeException(doctorId: string, id: string) {
+  const exception = await prisma.scheduleException.findUnique({ where: { id } });
+  if (!exception) throw new NotFoundError("Exception not found");
+  if (exception.doctorId !== doctorId) throw new ForbiddenError();
+
+  await prisma.scheduleException.delete({ where: { id } });
 }

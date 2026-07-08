@@ -18,3 +18,18 @@ export const slotsHandler = asyncHandler(async (req: Request, res: Response) => 
   const slots = await getFreeSlots(doctorId, date, serviceId);
   res.json({ slots });
 });
+
+export const listExceptionsHandler = asyncHandler(async (req: Request, res: Response) => {
+  const exceptions = await scheduleService.listExceptions(req.user!.id);
+  res.json({ exceptions });
+});
+
+export const createExceptionHandler = asyncHandler(async (req: Request, res: Response) => {
+  const exception = await scheduleService.addException(req.user!.id, req.body);
+  res.status(201).json({ exception });
+});
+
+export const deleteExceptionHandler = asyncHandler(async (req: Request, res: Response) => {
+  await scheduleService.removeException(req.user!.id, req.params.id);
+  res.status(204).send();
+});

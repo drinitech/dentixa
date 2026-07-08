@@ -63,6 +63,7 @@ model User {
   updatedAt    DateTime @updatedAt
 
   doctorSchedules         DoctorSchedule[]          @relation("DoctorSchedules")
+  scheduleExceptions      ScheduleException[]       @relation("DoctorScheduleExceptions")
   appointmentsAsPatient   Appointment[]             @relation("PatientAppointments")
   appointmentsAsDoctor    Appointment[]             @relation("DoctorAppointments")
   notificationPreferences NotificationPreference[]
@@ -95,6 +96,22 @@ model DoctorSchedule {
   updatedAt DateTime @updatedAt
 
   @@unique([doctorId, dayOfWeek, startTime, endTime])
+  @@index([doctorId])
+}
+
+// A specific full-day date the doctor is unavailable (holiday/time off),
+// layered on top of the recurring weekly DoctorSchedule. getFreeSlots treats
+// an excepted date as having zero free slots regardless of the day-of-week
+// windows that would otherwise apply.
+model ScheduleException {
+  id        String   @id @default(cuid())
+  doctorId  String
+  doctor    User     @relation("DoctorScheduleExceptions", fields: [doctorId], references: [id], onDelete: Cascade)
+  date      DateTime @db.Date
+  reason    String?
+  createdAt DateTime @default(now())
+
+  @@unique([doctorId, date])
   @@index([doctorId])
 }
 

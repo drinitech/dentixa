@@ -15,6 +15,11 @@ export async function getFreeSlots(doctorId: string, date: string, serviceId: st
   const dateObj = parseDateOnly(date);
   const dayOfWeek = dateObj.getUTCDay();
 
+  const exception = await prisma.scheduleException.findUnique({
+    where: { doctorId_date: { doctorId, date: dateObj } },
+  });
+  if (exception) return [];
+
   const [schedules, booked] = await Promise.all([
     prisma.doctorSchedule.findMany({ where: { doctorId, dayOfWeek } }),
     prisma.appointment.findMany({

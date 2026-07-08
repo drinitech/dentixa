@@ -1,16 +1,19 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
 
-const { clinicServiceFindUnique, doctorScheduleFindMany, appointmentFindMany } = vi.hoisted(() => ({
-  clinicServiceFindUnique: vi.fn(),
-  doctorScheduleFindMany: vi.fn(),
-  appointmentFindMany: vi.fn(),
-}));
+const { clinicServiceFindUnique, doctorScheduleFindMany, appointmentFindMany, scheduleExceptionFindUnique } =
+  vi.hoisted(() => ({
+    clinicServiceFindUnique: vi.fn(),
+    doctorScheduleFindMany: vi.fn(),
+    appointmentFindMany: vi.fn(),
+    scheduleExceptionFindUnique: vi.fn(),
+  }));
 
 vi.mock("../../lib/prisma", () => ({
   prisma: {
     clinicService: { findUnique: clinicServiceFindUnique },
     doctorSchedule: { findMany: doctorScheduleFindMany },
     appointment: { findMany: appointmentFindMany },
+    scheduleException: { findUnique: scheduleExceptionFindUnique },
   },
 }));
 
@@ -20,6 +23,7 @@ describe("getFreeSlots", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     clinicServiceFindUnique.mockResolvedValue({ id: "svc-1", durationMinutes: 30, isActive: true });
+    scheduleExceptionFindUnique.mockResolvedValue(null);
   });
 
   it("returns every slot in the schedule window when nothing is booked", async () => {
@@ -56,5 +60,15 @@ describe("getFreeSlots", () => {
 
     const slots = await getFreeSlots("doc-1", "2099-01-02", "svc-1");
     expect(slots).toEqual(["09:00", "14:00", "14:30"]);
+  });
+
+  it("returns no slots on a date marked as a schedule exception", async () => {
+    scheduleExceptionFindUnique.mockResolvedValue({ id: "exc-1", doctorId: "doc-1", date: new Date(), reason: null });
+    doctorScheduleFindMany.mockResolvedValue([{ startTime: "09:00", endTime: "10:00" }]);
+    appointmentFindMany.mockResolvedValue([]);
+
+    const slots = await getFreeSlots("doc-1", "2099-01-02", "svc-1");
+    expect(slots).toEqual([]);
+    expect(doctorScheduleFindMany).not.toHaveBeenCalled();
   });
 });

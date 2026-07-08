@@ -56,6 +56,12 @@ export interface DoctorScheduleWindow {
   endTime: string;
 }
 
+export interface ScheduleException {
+  id: string;
+  date: string;
+  reason: string | null;
+}
+
 export interface Appointment {
   id: string;
   patientId: string;
