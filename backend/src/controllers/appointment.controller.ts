@@ -2,6 +2,7 @@ import type { Request, Response } from "express";
 import { asyncHandler } from "../lib/asyncHandler";
 import * as appointmentService from "../services/appointment.service";
 import { notify } from "../services/notification.service";
+import { buildAppointmentsWorkbook } from "../lib/excel";
 import { BadRequestError } from "../errors/BadRequestError";
 
 export const createHandler = asyncHandler(async (req: Request, res: Response) => {
@@ -85,12 +86,17 @@ export const noShowHandler = asyncHandler(async (req: Request, res: Response) =>
   res.json({ appointment: appt });
 });
 
-export const icsHandler = asyncHandler(async (req: Request, res: Response) => {
-  const ics = await appointmentService.getAppointmentIcs(req.params.id, {
-    id: req.user!.id,
-    role: req.user!.role as "PATIENT" | "DOCTOR" | "ADMIN",
-  });
-  res.setHeader("Content-Type", "text/calendar; charset=utf-8");
-  res.setHeader("Content-Disposition", `attachment; filename="appointment-${req.params.id}.ics"`);
-  res.send(ics);
+export const exportHandler = asyncHandler(async (req: Request, res: Response) => {
+  const role = req.user!.role;
+  if (role !== "PATIENT" && role !== "DOCTOR") {
+    throw new BadRequestError("Use /admin/appointments/export.xlsx for a global view");
+  }
+  const appointments = await appointmentService.exportAppointments(
+    { role, userId: req.user!.id },
+    req.query as any,
+  );
+  const buffer = await buildAppointmentsWorkbook(appointments);
+  res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+  res.setHeader("Content-Disposition", 'attachment; filename="appointments.xlsx"');
+  res.send(buffer);
 });

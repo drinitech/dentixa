@@ -6,7 +6,6 @@ import { ForbiddenError } from "../errors/ForbiddenError";
 import { ConflictError } from "../errors/ConflictError";
 import { getFreeSlots } from "./slot.service";
 import { rangesOverlap, timeToMinutes } from "../lib/time";
-import { buildIcsEvent, buildIcsCalendar } from "../lib/ics";
 import type {
   CreateAppointmentInput,
   ListAppointmentsQuery,
@@ -86,10 +85,10 @@ interface ListScope {
   userId: string;
 }
 
-export async function listAppointments(
+function buildAppointmentWhere(
   scope: ListScope,
   query: ListAppointmentsQuery | AdminListAppointmentsQuery,
-) {
+): Prisma.AppointmentWhereInput {
   const where: Prisma.AppointmentWhereInput = {};
 
   if (scope.role === "PATIENT") where.patientId = scope.userId;
@@ -105,6 +104,15 @@ export async function listAppointments(
     };
   }
 
+  return where;
+}
+
+export async function listAppointments(
+  scope: ListScope,
+  query: ListAppointmentsQuery | AdminListAppointmentsQuery,
+) {
+  const where = buildAppointmentWhere(scope, query);
+
   const [appointments, total] = await Promise.all([
     prisma.appointment.findMany({
       where,
@@ -117,6 +125,25 @@ export async function listAppointments(
   ]);
 
   return { appointments, total, page: query.page, pageSize: query.pageSize };
+}
+
+// Same filters as listAppointments but ignores pagination — used for the
+// Excel export, capped well above any realistic clinic's appointment volume
+// so the request can't be abused to dump the whole table.
+const EXPORT_ROW_LIMIT = 5000;
+
+export async function exportAppointments(
+  scope: ListScope,
+  query: ListAppointmentsQuery | AdminListAppointmentsQuery,
+) {
+  const where = buildAppointmentWhere(scope, query);
+
+  return prisma.appointment.findMany({
+    where,
+    include: appointmentInclude,
+    orderBy: [{ date: "asc" }, { time: "asc" }],
+    take: EXPORT_ROW_LIMIT,
+  });
 }
 
 export async function rejectAppointment(id: string, doctorId: string, rejectionReason?: string) {
@@ -193,32 +220,6 @@ export async function markNoShow(id: string, doctorId: string) {
     data: { status: "NO_SHOW" },
     include: appointmentInclude,
   });
-}
-
-export async function getAppointmentIcs(id: string, actor: CancelActor): Promise<string> {
-  const appt = await prisma.appointment.findUnique({ where: { id }, include: appointmentInclude });
-  if (!appt) throw new NotFoundError("Appointment not found");
-
-  const owns =
-    (actor.role === "PATIENT" && appt.patientId === actor.id) ||
-    (actor.role === "DOCTOR" && appt.doctorId === actor.id) ||
-    actor.role === "ADMIN";
-  if (!owns) throw new ForbiddenError();
-
-  const summary =
-    actor.role === "DOCTOR" ? `Appointment with ${appt.patient.name}` : `Appointment with Dr. ${appt.doctor.name}`;
-
-  const event = buildIcsEvent({
-    uid: appt.id,
-    date: appt.date,
-    time: appt.time,
-    durationMinutes: appt.durationMinutes,
-    summary,
-    description: appt.service?.name,
-    createdAt: appt.createdAt,
-  });
-
-  return buildIcsCalendar([event]);
 }
 
 interface ApproveResult {

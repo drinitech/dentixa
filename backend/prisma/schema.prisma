@@ -47,10 +47,6 @@ model User {
   phone        String?
   // Doctor-only, self-set (e.g. "Orthodontist") — null/ignored for other roles.
   specialty    String?
-  // Doctor-only. Secret token for the unauthenticated .ics subscription feed
-  // (calendar apps can't send an Authorization header) — lazily generated on
-  // first request, not the same as any auth credential.
-  calendarToken String? @unique
   // Stored as a data: URI (small, resized client-side before upload) rather
   // than a filesystem path — Render's disk isn't persisted across deploys.
   avatarUrl    String?  @db.Text

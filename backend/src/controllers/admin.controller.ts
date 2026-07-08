@@ -4,6 +4,7 @@ import * as adminService from "../services/admin.service";
 import * as appointmentService from "../services/appointment.service";
 import * as clinicServiceService from "../services/clinicService.service";
 import * as statsService from "../services/stats.service";
+import { buildAppointmentsWorkbook } from "../lib/excel";
 
 export const createDoctorHandler = asyncHandler(async (req: Request, res: Response) => {
   const doctor = await adminService.createDoctor(req.body);
@@ -51,6 +52,17 @@ export const globalAppointmentsHandler = asyncHandler(async (req: Request, res: 
     req.query as any,
   );
   res.json(result);
+});
+
+export const globalExportAppointmentsHandler = asyncHandler(async (req: Request, res: Response) => {
+  const appointments = await appointmentService.exportAppointments(
+    { role: "ADMIN", userId: req.user!.id },
+    req.query as any,
+  );
+  const buffer = await buildAppointmentsWorkbook(appointments);
+  res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+  res.setHeader("Content-Disposition", 'attachment; filename="appointments.xlsx"');
+  res.send(buffer);
 });
 
 export const overrideCancelAppointmentHandler = asyncHandler(async (req: Request, res: Response) => {

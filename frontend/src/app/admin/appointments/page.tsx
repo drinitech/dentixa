@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
-import { CalendarX2 } from "lucide-react";
+import { CalendarX2, FileSpreadsheet } from "lucide-react";
 import { PageHeader } from "@/components/common/page-header";
 import { EmptyState } from "@/components/common/empty-state";
 import { PageLoading } from "@/components/common/loading-spinner";
@@ -10,7 +10,8 @@ import { AppointmentsTable } from "@/components/admin/appointments-table";
 import { Pagination } from "@/components/common/pagination";
 import { Select } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { useAppointments, useCancelAppointment } from "@/hooks/use-appointments";
+import { Button } from "@/components/ui/button";
+import { useAppointments, useCancelAppointment, useExportAppointments } from "@/hooks/use-appointments";
 import { useDoctors } from "@/hooks/use-slots";
 import { ApiError } from "@/lib/api-client";
 import type { AppointmentStatus } from "@/types";
@@ -37,6 +38,7 @@ export default function AdminAppointmentsPage() {
     { admin: true },
   );
   const cancelAppointment = useCancelAppointment({ admin: true });
+  const exportAppointments = useExportAppointments();
 
   function updateFilter<T>(setter: (value: T) => void, value: T) {
     setter(value);
@@ -52,9 +54,32 @@ export default function AdminAppointmentsPage() {
     }
   }
 
+  async function handleExport() {
+    try {
+      await exportAppointments.mutateAsync({
+        admin: true,
+        status: status || undefined,
+        doctorId: doctorId || undefined,
+        from: from || undefined,
+        to: to || undefined,
+      });
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : "Could not export appointments");
+    }
+  }
+
   return (
     <div className="space-y-6">
-      <PageHeader title="All appointments" description="Clinic-wide view, with override cancel for emergencies." />
+      <PageHeader
+        title="All appointments"
+        description="Clinic-wide view, with override cancel for emergencies."
+        action={
+          <Button variant="outline" size="sm" onClick={handleExport} disabled={exportAppointments.isPending}>
+            <FileSpreadsheet className="h-3.5 w-3.5" />
+            Export to Excel
+          </Button>
+        }
+      />
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Select value={doctorId} onChange={(e) => updateFilter(setDoctorId, e.target.value)}>

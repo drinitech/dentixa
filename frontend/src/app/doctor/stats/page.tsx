@@ -2,19 +2,21 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
-import { CalendarCheck2, CalendarX2, CheckCircle2, Clock, UserX, XCircle } from "lucide-react";
+import { CalendarCheck2, CalendarX2, CheckCircle2, Clock, FileSpreadsheet, UserX, XCircle } from "lucide-react";
 import { PageHeader } from "@/components/common/page-header";
 import { PageLoading } from "@/components/common/loading-spinner";
 import { EmptyState } from "@/components/common/empty-state";
 import { StatTile } from "@/components/common/stat-tile";
 import { AppointmentCard } from "@/components/appointments/appointment-card";
 import { Pagination } from "@/components/common/pagination";
+import { Button } from "@/components/ui/button";
 import { useDoctorStats } from "@/hooks/use-stats";
 import {
   useAppointments,
   useCancelAppointment,
   useCompleteAppointment,
   useMarkNoShow,
+  useExportAppointments,
 } from "@/hooks/use-appointments";
 import { ApiError } from "@/lib/api-client";
 import { STATUS_LABELS } from "@/lib/utils";
@@ -33,6 +35,7 @@ export default function DoctorStatsPage() {
   const cancelAppointment = useCancelAppointment();
   const completeAppointment = useCompleteAppointment();
   const markNoShow = useMarkNoShow();
+  const exportAppointments = useExportAppointments();
 
   function toggleFilter(next: Filter) {
     setFilter((current) => (current === next ? "ALL" : next));
@@ -63,6 +66,14 @@ export default function DoctorStatsPage() {
       toast.success("Appointment marked as no-show");
     } catch (err) {
       toast.error(err instanceof ApiError ? err.message : "Could not mark appointment as no-show");
+    }
+  }
+
+  async function handleExport() {
+    try {
+      await exportAppointments.mutateAsync(filter === "ALL" ? {} : { status: filter });
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : "Could not export appointments");
     }
   }
 
@@ -113,9 +124,15 @@ export default function DoctorStatsPage() {
       </div>
 
       <div>
-        <p className="mb-3 text-sm font-medium text-foreground">
-          {filter === "ALL" ? "All appointments" : `${STATUS_LABELS[filter]} appointments`}
-        </p>
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <p className="text-sm font-medium text-foreground">
+            {filter === "ALL" ? "All appointments" : `${STATUS_LABELS[filter]} appointments`}
+          </p>
+          <Button variant="outline" size="sm" onClick={handleExport} disabled={exportAppointments.isPending}>
+            <FileSpreadsheet className="h-3.5 w-3.5" />
+            Export to Excel
+          </Button>
+        </div>
         {appointmentsLoading ? (
           <PageLoading />
         ) : appointmentsData && appointmentsData.appointments.length > 0 ? (

@@ -15,6 +15,7 @@ import {
   resetPasswordHandler,
   deleteUserHandler,
   globalAppointmentsHandler,
+  globalExportAppointmentsHandler,
   overrideCancelAppointmentHandler,
   listServicesHandler,
   createServiceHandler,
@@ -41,6 +42,11 @@ adminRouter.get(
   "/appointments",
   validate(adminListAppointmentsQuerySchema, "query"),
   globalAppointmentsHandler,
+);
+adminRouter.get(
+  "/appointments/export.xlsx",
+  validate(adminListAppointmentsQuerySchema, "query"),
+  globalExportAppointmentsHandler,
 );
 adminRouter.patch("/appointments/:id/cancel", overrideCancelAppointmentHandler);
 

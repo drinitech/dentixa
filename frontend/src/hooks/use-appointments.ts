@@ -86,20 +86,6 @@ export function useCompleteAppointment() {
   });
 }
 
-export function useDownloadIcs() {
-  return useMutation({
-    mutationFn: async (id: string) => {
-      const blob = await apiFetchBlob(`/appointments/${id}/ics`);
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `appointment-${id}.ics`;
-      link.click();
-      URL.revokeObjectURL(url);
-    },
-  });
-}
-
 export function useMarkNoShow() {
   const queryClient = useQueryClient();
   return useMutation({
@@ -125,6 +111,22 @@ export function useCreateReview() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["appointments"] });
       queryClient.invalidateQueries({ queryKey: ["doctors"] });
+    },
+  });
+}
+
+export function useExportAppointments() {
+  return useMutation({
+    mutationFn: async (params: ListParams & { admin?: boolean }) => {
+      const { admin, ...listParams } = params;
+      const path = admin ? "/admin/appointments/export.xlsx" : "/appointments/export.xlsx";
+      const blob = await apiFetchBlob(`${path}${toQueryString(listParams)}`);
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "appointments.xlsx";
+      link.click();
+      URL.revokeObjectURL(url);
     },
   });
 }
