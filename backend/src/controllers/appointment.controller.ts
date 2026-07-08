@@ -84,3 +84,13 @@ export const noShowHandler = asyncHandler(async (req: Request, res: Response) =>
   const appt = await appointmentService.markNoShow(req.params.id, req.user!.id);
   res.json({ appointment: appt });
 });
+
+export const icsHandler = asyncHandler(async (req: Request, res: Response) => {
+  const ics = await appointmentService.getAppointmentIcs(req.params.id, {
+    id: req.user!.id,
+    role: req.user!.role as "PATIENT" | "DOCTOR" | "ADMIN",
+  });
+  res.setHeader("Content-Type", "text/calendar; charset=utf-8");
+  res.setHeader("Content-Disposition", `attachment; filename="appointment-${req.params.id}.ics"`);
+  res.send(ics);
+});

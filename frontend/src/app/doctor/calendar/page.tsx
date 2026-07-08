@@ -1,12 +1,14 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ChevronLeft, ChevronRight, CalendarDays } from "lucide-react";
+import { toast } from "sonner";
+import { ChevronLeft, ChevronRight, CalendarDays, Copy } from "lucide-react";
 import { PageHeader } from "@/components/common/page-header";
 import { EmptyState } from "@/components/common/empty-state";
 import { PageLoading } from "@/components/common/loading-spinner";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { cn, formatDate } from "@/lib/utils";
 import {
   addDaysToKey,
@@ -16,10 +18,24 @@ import {
   toClinicDateKey,
 } from "@/lib/clinic-date";
 import { useAppointments } from "@/hooks/use-appointments";
+import { useCalendarToken } from "@/hooks/use-calendar";
+import { useAuth } from "@/lib/auth-context";
+import { API_URL } from "@/lib/api-client";
 import type { Appointment } from "@/types";
 
 export default function DoctorCalendarPage() {
   const [weekOffset, setWeekOffset] = useState(0);
+  const [subscribeOpen, setSubscribeOpen] = useState(false);
+  const { user } = useAuth();
+  const { data: tokenData } = useCalendarToken(subscribeOpen);
+  const feedUrl =
+    user && tokenData ? `${API_URL}/doctors/${user.id}/calendar.ics?token=${tokenData.token}` : null;
+
+  async function copyFeedUrl() {
+    if (!feedUrl) return;
+    await navigator.clipboard.writeText(feedUrl);
+    toast.success("Link copied");
+  }
 
   const todayKey = useMemo(() => toClinicDateKey(new Date()), []);
   const weekStartKey = useMemo(() => {
@@ -65,9 +81,30 @@ export default function DoctorCalendarPage() {
             <Button variant="outline" size="sm" onClick={() => setWeekOffset((w) => w + 1)}>
               <ChevronRight className="h-4 w-4" />
             </Button>
+            <Button variant="outline" size="sm" onClick={() => setSubscribeOpen((v) => !v)}>
+              Subscribe
+            </Button>
           </div>
         }
       />
+
+      {subscribeOpen && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Subscribe from Google Calendar / Outlook</CardTitle>
+            <CardDescription>
+              Add this link as a calendar subscription to see your confirmed appointments update automatically.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-2 sm:flex-row">
+            <Input readOnly value={feedUrl ?? "Loading…"} onFocus={(e) => e.target.select()} />
+            <Button variant="outline" onClick={copyFeedUrl} disabled={!feedUrl} className="shrink-0">
+              <Copy className="h-3.5 w-3.5" />
+              Copy link
+            </Button>
+          </CardContent>
+        </Card>
+      )}
 
       {isLoading ? (
         <PageLoading />

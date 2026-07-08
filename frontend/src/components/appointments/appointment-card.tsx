@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
-import { CalendarDays, CheckCircle2, Clock, Star, Stethoscope, UserX, X } from "lucide-react";
+import { CalendarDays, CalendarPlus, CheckCircle2, Clock, Star, Stethoscope, UserX, X } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { StatusBadge } from "./status-badge";
 import { StarRating } from "./star-rating";
@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { formatDate } from "@/lib/utils";
-import { useCreateReview } from "@/hooks/use-appointments";
+import { useCreateReview, useDownloadIcs } from "@/hooks/use-appointments";
 import { ApiError } from "@/lib/api-client";
 import type { Appointment } from "@/types";
 
@@ -36,6 +36,7 @@ export function AppointmentCard({
   const canCancel = appointment.status === "PENDING" || appointment.status === "APPROVED";
   const canComplete = appointment.status === "APPROVED";
   const canMarkNoShow = appointment.status === "APPROVED";
+  const canAddToCalendar = appointment.status === "APPROVED";
   // Only the patient reviews their own visit — showPatient is true for the doctor/admin view.
   const canReview = !showPatient && appointment.status === "DONE" && !appointment.review;
 
@@ -43,6 +44,15 @@ export function AppointmentCard({
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState("");
   const createReview = useCreateReview();
+  const downloadIcs = useDownloadIcs();
+
+  async function handleDownloadIcs() {
+    try {
+      await downloadIcs.mutateAsync(appointment.id);
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : "Could not download calendar event");
+    }
+  }
 
   async function submitReview() {
     try {
@@ -92,8 +102,18 @@ export function AppointmentCard({
             </div>
           )}
         </div>
-        {(canComplete && onComplete) || (canMarkNoShow && onNoShow) || (canCancel && onCancel) || canReview ? (
+        {(canComplete && onComplete) ||
+        (canMarkNoShow && onNoShow) ||
+        (canCancel && onCancel) ||
+        canReview ||
+        canAddToCalendar ? (
           <div className="flex shrink-0 flex-wrap items-center gap-2">
+            {canAddToCalendar && (
+              <Button variant="outline" size="sm" onClick={handleDownloadIcs} disabled={downloadIcs.isPending}>
+                <CalendarPlus className="h-3.5 w-3.5" />
+                Add to calendar
+              </Button>
+            )}
             {canComplete && onComplete && (
               <Button
                 variant="outline"

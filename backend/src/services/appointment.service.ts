@@ -6,6 +6,7 @@ import { ForbiddenError } from "../errors/ForbiddenError";
 import { ConflictError } from "../errors/ConflictError";
 import { getFreeSlots } from "./slot.service";
 import { rangesOverlap, timeToMinutes } from "../lib/time";
+import { buildIcsEvent, buildIcsCalendar } from "../lib/ics";
 import type {
   CreateAppointmentInput,
   ListAppointmentsQuery,
@@ -192,6 +193,32 @@ export async function markNoShow(id: string, doctorId: string) {
     data: { status: "NO_SHOW" },
     include: appointmentInclude,
   });
+}
+
+export async function getAppointmentIcs(id: string, actor: CancelActor): Promise<string> {
+  const appt = await prisma.appointment.findUnique({ where: { id }, include: appointmentInclude });
+  if (!appt) throw new NotFoundError("Appointment not found");
+
+  const owns =
+    (actor.role === "PATIENT" && appt.patientId === actor.id) ||
+    (actor.role === "DOCTOR" && appt.doctorId === actor.id) ||
+    actor.role === "ADMIN";
+  if (!owns) throw new ForbiddenError();
+
+  const summary =
+    actor.role === "DOCTOR" ? `Appointment with ${appt.patient.name}` : `Appointment with Dr. ${appt.doctor.name}`;
+
+  const event = buildIcsEvent({
+    uid: appt.id,
+    date: appt.date,
+    time: appt.time,
+    durationMinutes: appt.durationMinutes,
+    summary,
+    description: appt.service?.name,
+    createdAt: appt.createdAt,
+  });
+
+  return buildIcsCalendar([event]);
 }
 
 interface ApproveResult {

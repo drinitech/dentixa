@@ -1,4 +1,4 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api";
+export const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api";
 
 export class ApiError extends Error {
   status: number;
@@ -72,4 +72,24 @@ export async function apiFetch<T>(path: string, options: RequestOptions = {}): P
   }
 
   return data as T;
+}
+
+// For non-JSON responses (e.g. the .ics calendar download) that apiFetch can't parse.
+export async function apiFetchBlob(path: string, options: RequestOptions = {}): Promise<Blob> {
+  let res = await rawRequest(path, options);
+
+  if (res.status === 401 && !options.skipAuthRetry && refreshFn) {
+    const newToken = await refreshFn();
+    if (newToken) {
+      res = await rawRequest(path, { ...options, skipAuthRetry: true });
+    }
+  }
+
+  if (!res.ok) {
+    const isJson = res.headers.get("content-type")?.includes("application/json");
+    const data = isJson ? await res.json() : undefined;
+    throw new ApiError(data?.error || "Something went wrong", res.status, data?.details);
+  }
+
+  return res.blob();
 }

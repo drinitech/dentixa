@@ -16,6 +16,7 @@ import {
   cancelHandler,
   completeHandler,
   noShowHandler,
+  icsHandler,
 } from "../controllers/appointment.controller";
 import { createReviewHandler } from "../controllers/review.controller";
 
@@ -30,6 +31,7 @@ appointmentRouter.patch("/:id/reject", authorize("DOCTOR"), validate(rejectAppoi
 appointmentRouter.patch("/:id/cancel", authorize("PATIENT", "DOCTOR"), cancelHandler);
 appointmentRouter.patch("/:id/complete", authorize("DOCTOR"), completeHandler);
 appointmentRouter.patch("/:id/no-show", authorize("DOCTOR"), noShowHandler);
+appointmentRouter.get("/:id/ics", icsHandler);
 appointmentRouter.post(
   "/:id/review",
   authorize("PATIENT"),

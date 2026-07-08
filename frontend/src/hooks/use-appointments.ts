@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { apiFetch } from "@/lib/api-client";
+import { apiFetch, apiFetchBlob } from "@/lib/api-client";
 import type { Appointment, AppointmentStatus } from "@/types";
 
 interface ListParams {
@@ -82,6 +82,20 @@ export function useCompleteAppointment() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["appointments"] });
       queryClient.invalidateQueries({ queryKey: ["admin-appointments"] });
+    },
+  });
+}
+
+export function useDownloadIcs() {
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const blob = await apiFetchBlob(`/appointments/${id}/ics`);
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `appointment-${id}.ics`;
+      link.click();
+      URL.revokeObjectURL(url);
     },
   });
 }
