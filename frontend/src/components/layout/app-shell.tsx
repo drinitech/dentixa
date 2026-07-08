@@ -8,6 +8,7 @@ import { useAuth } from "@/lib/auth-context";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { Avatar } from "@/components/common/avatar";
+import { ROLE_HOME, ROLE_PROFILE } from "./nav-items";
 
 export interface NavItem {
   label: string;
@@ -28,6 +29,8 @@ export function AppShell({
   const pathname = usePathname();
   const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const homeHref = user ? ROLE_HOME[user.role] : "/login";
+  const profileHref = user ? ROLE_PROFILE[user.role] : "/login";
 
   async function handleLogout() {
     await logout();
@@ -39,12 +42,12 @@ export function AppShell({
     <div className="flex min-h-screen w-full bg-background">
       {/* Desktop sidebar */}
       <aside className="hidden w-64 shrink-0 border-r border-border bg-card md:flex md:flex-col">
-        <div className="flex h-16 items-center gap-2 border-b border-border px-6">
+        <Link href={homeHref} className="flex h-16 items-center gap-2 border-b border-border px-6 hover:bg-muted">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground font-semibold">
             D
           </div>
           <span className="text-lg font-semibold tracking-tight">Dentixa</span>
-        </div>
+        </Link>
         <nav className="flex-1 space-y-1 p-3">
           {navItems.map((item) => {
             const active = pathname === item.href;
@@ -66,13 +69,16 @@ export function AppShell({
           })}
         </nav>
         <div className="border-t border-border p-3">
-          <div className="mb-2 flex items-center gap-2.5 rounded-lg bg-muted px-3 py-2">
+          <Link
+            href={profileHref}
+            className="mb-2 flex items-center gap-2.5 rounded-lg bg-muted px-3 py-2 transition-colors hover:bg-accent"
+          >
             <Avatar src={user?.avatarUrl} name={user?.name ?? "?"} size="sm" />
             <div className="min-w-0">
               <p className="truncate text-sm font-medium text-foreground">{user?.name}</p>
               <p className="text-xs text-muted-foreground">{roleLabel}</p>
             </div>
-          </div>
+          </Link>
           <button
             onClick={handleLogout}
             className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
@@ -86,12 +92,12 @@ export function AppShell({
       {/* Mobile top bar */}
       <div className="flex flex-1 flex-col">
         <header className="flex h-16 items-center justify-between border-b border-border bg-card px-4 md:hidden">
-          <div className="flex items-center gap-2">
+          <Link href={homeHref} className="flex items-center gap-2">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground font-semibold">
               D
             </div>
             <span className="font-semibold">Dentixa</span>
-          </div>
+          </Link>
           <button onClick={() => setMobileOpen(true)} aria-label="Open menu" className="p-2">
             <Menu className="h-5 w-5" />
           </button>
@@ -102,11 +108,24 @@ export function AppShell({
             <div className="absolute inset-0 bg-foreground/20" onClick={() => setMobileOpen(false)} />
             <div className="relative flex w-72 flex-col bg-card p-3 shadow-xl">
               <div className="mb-2 flex items-center justify-between px-2 py-2">
-                <span className="font-semibold">Dentixa</span>
+                <Link href={homeHref} onClick={() => setMobileOpen(false)} className="font-semibold">
+                  Dentixa
+                </Link>
                 <button onClick={() => setMobileOpen(false)} aria-label="Close menu">
                   <X className="h-5 w-5" />
                 </button>
               </div>
+              <Link
+                href={profileHref}
+                onClick={() => setMobileOpen(false)}
+                className="mb-2 flex items-center gap-2.5 rounded-lg bg-muted px-3 py-2 transition-colors hover:bg-accent"
+              >
+                <Avatar src={user?.avatarUrl} name={user?.name ?? "?"} size="sm" />
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-medium text-foreground">{user?.name}</p>
+                  <p className="text-xs text-muted-foreground">{roleLabel}</p>
+                </div>
+              </Link>
               <nav className="flex-1 space-y-1">
                 {navItems.map((item) => {
                   const active = pathname === item.href;

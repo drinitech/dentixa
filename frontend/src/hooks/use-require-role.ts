@@ -3,13 +3,8 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
+import { ROLE_HOME } from "@/components/layout/nav-items";
 import type { Role } from "@/types";
-
-const ROLE_HOME: Record<Role, string> = {
-  PATIENT: "/dashboard",
-  DOCTOR: "/doctor/dashboard",
-  ADMIN: "/admin/dashboard",
-};
 
 export function useRequireRole(role: Role) {
   const { user, loading } = useAuth();

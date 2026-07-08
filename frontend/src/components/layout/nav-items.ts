@@ -1,5 +1,6 @@
 import { CalendarPlus, ClipboardList, UserCog, Users, Stethoscope, CalendarDays, BarChart3, Settings } from "lucide-react";
 import type { NavItem } from "./app-shell";
+import type { Role } from "@/types";
 
 export const patientNav: NavItem[] = [
   { label: "Book appointment", href: "/dashboard", icon: CalendarPlus },
@@ -21,4 +22,17 @@ export const adminNav: NavItem[] = [
   { label: "Users", href: "/admin/users", icon: Users },
   { label: "Appointments", href: "/admin/appointments", icon: CalendarDays },
   { label: "Services", href: "/admin/services", icon: Settings },
+  { label: "Profile", href: "/admin/profile", icon: UserCog },
 ];
+
+export const ROLE_HOME: Record<Role, string> = {
+  PATIENT: "/dashboard",
+  DOCTOR: "/doctor/dashboard",
+  ADMIN: "/admin/dashboard",
+};
+
+export const ROLE_PROFILE: Record<Role, string> = {
+  PATIENT: "/profile",
+  DOCTOR: "/doctor/profile",
+  ADMIN: "/admin/profile",
+};

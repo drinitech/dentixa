@@ -13,12 +13,7 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth-context";
 import { loginSchema, type LoginInput } from "@/lib/validations";
 import { ApiError } from "@/lib/api-client";
-
-const ROLE_HOME: Record<string, string> = {
-  PATIENT: "/dashboard",
-  DOCTOR: "/doctor/dashboard",
-  ADMIN: "/admin/dashboard",
-};
+import { ROLE_HOME } from "@/components/layout/nav-items";
 
 export default function LoginPage() {
   const { login } = useAuth();
