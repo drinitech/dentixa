@@ -69,6 +69,14 @@ export function useBanUser() {
   });
 }
 
+export function useDeleteUser() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => apiFetch<void>(`/admin/users/${id}`, { method: "DELETE" }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["admin-users"] }),
+  });
+}
+
 export function useResetPassword() {
   return useMutation({
     mutationFn: (id: string) =>

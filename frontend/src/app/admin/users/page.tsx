@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
-import { Users as UsersIcon } from "lucide-react";
+import { Users as UsersIcon, Trash2 } from "lucide-react";
 import { PageHeader } from "@/components/common/page-header";
 import { EmptyState } from "@/components/common/empty-state";
 import { PageLoading } from "@/components/common/loading-spinner";
@@ -10,16 +10,17 @@ import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
-import { useAdminUsers, useBanUser, useResetPassword } from "@/hooks/use-admin";
+import { useAdminUsers, useBanUser, useResetPassword, useDeleteUser } from "@/hooks/use-admin";
 import { ApiError } from "@/lib/api-client";
 import { formatDate } from "@/lib/utils";
-import type { Role } from "@/types";
+import type { AdminUser, Role } from "@/types";
 
 export default function AdminUsersPage() {
   const [search, setSearch] = useState("");
   const [role, setRole] = useState<Role | "">("");
   const [status, setStatus] = useState<"active" | "inactive" | "">("");
   const [tempPassword, setTempPassword] = useState<string | null>(null);
+  const [userToDelete, setUserToDelete] = useState<AdminUser | null>(null);
 
   const { data, isLoading } = useAdminUsers({
     search: search || undefined,
@@ -28,6 +29,7 @@ export default function AdminUsersPage() {
   });
   const banUser = useBanUser();
   const resetPassword = useResetPassword();
+  const deleteUser = useDeleteUser();
 
   async function handleBanToggle(id: string, isActive: boolean) {
     try {
@@ -44,6 +46,17 @@ export default function AdminUsersPage() {
       setTempPassword(result.tempPassword);
     } catch (err) {
       toast.error(err instanceof ApiError ? err.message : "Could not reset password");
+    }
+  }
+
+  async function handleDeleteConfirm() {
+    if (!userToDelete) return;
+    try {
+      await deleteUser.mutateAsync(userToDelete.id);
+      toast.success(`${userToDelete.name} was permanently deleted`);
+      setUserToDelete(null);
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : "Could not delete user");
     }
   }
 
@@ -113,6 +126,12 @@ export default function AdminUsersPage() {
                           {u.isActive ? "Ban" : "Unban"}
                         </Button>
                       )}
+                      {u.role !== "ADMIN" && (
+                        <Button variant="destructive" size="sm" onClick={() => setUserToDelete(u)}>
+                          <Trash2 className="h-3.5 w-3.5" />
+                          Delete
+                        </Button>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -131,6 +150,26 @@ export default function AdminUsersPage() {
         description="Share this with the user — it won't be shown again."
       >
         <div className="rounded-lg bg-muted px-4 py-3 text-center font-mono text-sm">{tempPassword}</div>
+      </Dialog>
+
+      <Dialog
+        open={userToDelete !== null}
+        onOpenChange={() => setUserToDelete(null)}
+        title="Delete user permanently?"
+        description={
+          userToDelete
+            ? `This permanently deletes ${userToDelete.name} (${userToDelete.email}) and all of their appointment history. This cannot be undone.`
+            : undefined
+        }
+      >
+        <div className="flex justify-end gap-2">
+          <Button variant="outline" size="sm" onClick={() => setUserToDelete(null)}>
+            Cancel
+          </Button>
+          <Button variant="destructive" size="sm" onClick={handleDeleteConfirm} disabled={deleteUser.isPending}>
+            {deleteUser.isPending ? "Deleting…" : "Delete permanently"}
+          </Button>
+        </div>
       </Dialog>
     </div>
   );

@@ -83,6 +83,17 @@ export async function setUserActive(id: string, isActive: boolean) {
   });
 }
 
+// Permanently removes the user. Cascades (schema-level onDelete: Cascade) to
+// their appointments (as patient or doctor), doctor schedule, and notification
+// preferences — irreversible, so the frontend must confirm before calling this.
+export async function deleteUser(id: string) {
+  const user = await prisma.user.findUnique({ where: { id } });
+  if (!user) throw new NotFoundError("User not found");
+  if (user.role === "ADMIN") throw new BadRequestError("Cannot delete an admin account");
+
+  await prisma.user.delete({ where: { id } });
+}
+
 // Admin-set temporary password, returned once in the response for the admin
 // to relay to the user (no email reset-link flow in this phase).
 export async function resetPassword(id: string) {

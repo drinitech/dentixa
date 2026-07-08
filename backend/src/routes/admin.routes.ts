@@ -13,6 +13,7 @@ import {
   banUserHandler,
   unbanUserHandler,
   resetPasswordHandler,
+  deleteUserHandler,
   globalAppointmentsHandler,
   overrideCancelAppointmentHandler,
   listServicesHandler,
@@ -34,6 +35,7 @@ adminRouter.get("/users", validate(listUsersQuerySchema, "query"), listUsersHand
 adminRouter.patch("/users/:id/ban", banUserHandler);
 adminRouter.patch("/users/:id/unban", unbanUserHandler);
 adminRouter.post("/users/:id/reset-password", resetPasswordHandler);
+adminRouter.delete("/users/:id", deleteUserHandler);
 
 adminRouter.get(
   "/appointments",

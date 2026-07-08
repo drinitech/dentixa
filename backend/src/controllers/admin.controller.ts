@@ -40,6 +40,11 @@ export const resetPasswordHandler = asyncHandler(async (req: Request, res: Respo
   res.json(result);
 });
 
+export const deleteUserHandler = asyncHandler(async (req: Request, res: Response) => {
+  await adminService.deleteUser(req.params.id);
+  res.status(204).send();
+});
+
 export const globalAppointmentsHandler = asyncHandler(async (req: Request, res: Response) => {
   const appointments = await appointmentService.listAppointments(
     { role: "ADMIN", userId: req.user!.id },
