@@ -77,6 +77,7 @@ export interface DoctorStats {
   appointmentsThisWeek: number;
   rejectionsCount: number;
   pendingCount: number;
+  doneCount: number;
 }
 
 export interface AdminStats {

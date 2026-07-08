@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
-import { CalendarCheck2, CalendarX2, Clock, XCircle } from "lucide-react";
+import { CalendarCheck2, CalendarX2, CheckCircle2, Clock, XCircle } from "lucide-react";
 import { PageHeader } from "@/components/common/page-header";
 import { PageLoading } from "@/components/common/loading-spinner";
 import { EmptyState } from "@/components/common/empty-state";
@@ -54,7 +54,7 @@ export default function DoctorStatsPage() {
         title="Your stats"
         description="Click a stat to filter the appointment table below, and manage appointments directly from it."
       />
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatTile
           icon={CalendarCheck2}
           label="Confirmed this week"
@@ -75,6 +75,13 @@ export default function DoctorStatsPage() {
           value={data.stats.rejectionsCount}
           onClick={() => toggleFilter("REJECTED")}
           active={filter === "REJECTED"}
+        />
+        <StatTile
+          icon={CheckCircle2}
+          label="Total done"
+          value={data.stats.doneCount}
+          onClick={() => toggleFilter("DONE")}
+          active={filter === "DONE"}
         />
       </div>
 
