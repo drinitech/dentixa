@@ -39,6 +39,7 @@ export function ServiceForm({
         name: service?.name ?? "",
         durationMinutes: String(service?.durationMinutes ?? 30),
         price: service?.price != null ? String(service.price) : "",
+        recallIntervalMonths: service?.recallIntervalMonths != null ? String(service.recallIntervalMonths) : "",
       });
     }
   }, [open, service, reset]);
@@ -49,6 +50,7 @@ export function ServiceForm({
         name: data.name,
         durationMinutes: Number(data.durationMinutes),
         price: data.price ? Number(data.price) : undefined,
+        recallIntervalMonths: data.recallIntervalMonths ? Number(data.recallIntervalMonths) : null,
       };
       if (isEditing && service) {
         await updateService.mutateAsync({ id: service.id, ...payload });
@@ -86,6 +88,20 @@ export function ServiceForm({
         <div className="space-y-1.5">
           <Label htmlFor="service-price">Price (optional)</Label>
           <Input id="service-price" type="number" step="0.01" min={0} {...register("price")} />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="service-recall">Recall reminder after (months, optional)</Label>
+          <Input
+            id="service-recall"
+            type="number"
+            min={1}
+            max={60}
+            placeholder="e.g. 6"
+            {...register("recallIntervalMonths")}
+          />
+          {errors.recallIntervalMonths && (
+            <p className="text-xs text-destructive">{errors.recallIntervalMonths.message}</p>
+          )}
         </div>
         <Button type="submit" className="w-full" disabled={pending}>
           {pending ? "Saving…" : isEditing ? "Save changes" : "Create service"}

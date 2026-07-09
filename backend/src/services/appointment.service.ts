@@ -5,6 +5,7 @@ import { BadRequestError } from "../errors/BadRequestError";
 import { ForbiddenError } from "../errors/ForbiddenError";
 import { ConflictError } from "../errors/ConflictError";
 import { getFreeSlots } from "./slot.service";
+import { scheduleRecall, markRecallsBooked } from "./recall.service";
 import { rangesOverlap, timeToMinutes } from "../lib/time";
 import type {
   CreateAppointmentInput,
@@ -62,7 +63,7 @@ export async function createAppointment(patientId: string, input: CreateAppointm
   }
 
   try {
-    return await prisma.appointment.create({
+    const created = await prisma.appointment.create({
       data: {
         patientId,
         doctorId: input.doctorId,
@@ -75,6 +76,9 @@ export async function createAppointment(patientId: string, input: CreateAppointm
       },
       include: appointmentInclude,
     });
+    // Best-effort — a rebooking closing out an old recall reminder must never fail the booking itself.
+    await markRecallsBooked(patientId, input.doctorId, input.serviceId).catch(() => {});
+    return created;
   } catch (err) {
     // Backstop for the race where two patients request the exact same slot
     // simultaneously — the partial unique index on (doctorId, date, time)
@@ -202,16 +206,23 @@ export async function cancelAppointment(id: string, actor: CancelActor) {
 // actually happened). Frees it from the partial unique index's active set
 // (PENDING/APPROVED) automatically since DONE isn't in that filter.
 export async function completeAppointment(id: string, doctorId: string) {
-  const appt = await prisma.appointment.findUnique({ where: { id } });
+  const appt = await prisma.appointment.findUnique({ where: { id }, include: { service: true } });
   if (!appt) throw new NotFoundError("Appointment not found");
   if (appt.doctorId !== doctorId) throw new ForbiddenError();
   if (appt.status !== "APPROVED") throw new ConflictError("Only approved appointments can be marked done");
 
-  return prisma.appointment.update({
+  const updated = await prisma.appointment.update({
     where: { id },
     data: { status: "DONE" },
     include: appointmentInclude,
   });
+
+  if (appt.service?.recallIntervalMonths) {
+    // Best-effort — a recall-scheduling hiccup must never fail marking the visit done.
+    await scheduleRecall(appt, appt.service.recallIntervalMonths).catch(() => {});
+  }
+
+  return updated;
 }
 
 // Doctor marks an approved appointment as a no-show (patient never came).

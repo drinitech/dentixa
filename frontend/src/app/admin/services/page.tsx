@@ -68,6 +68,7 @@ export default function AdminServicesPage() {
                   <p className="text-sm font-medium text-foreground">{service.name}</p>
                   <p className="text-sm text-muted-foreground">
                     {service.durationMinutes} min{service.price != null && ` · $${Number(service.price).toFixed(2)}`}
+                    {service.recallIntervalMonths != null && ` · recall after ${service.recallIntervalMonths}mo`}
                   </p>
                 </div>
                 <div className="flex items-center gap-2">

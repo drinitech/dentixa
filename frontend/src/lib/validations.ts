@@ -36,6 +36,10 @@ export const clinicServiceSchema = z.object({
     .string()
     .optional()
     .refine((v) => !v || Number(v) >= 0, "Must be a positive number"),
+  recallIntervalMonths: z
+    .string()
+    .optional()
+    .refine((v) => !v || (Number(v) >= 1 && Number(v) <= 60), "Must be between 1 and 60 months"),
 });
 export type ClinicServiceFormInput = z.infer<typeof clinicServiceSchema>;
 

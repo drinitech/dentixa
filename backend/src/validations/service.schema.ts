@@ -4,6 +4,8 @@ export const clinicServiceSchema = z.object({
   name: z.string().trim().min(2).max(100),
   durationMinutes: z.number().int().min(5).max(480),
   price: z.number().nonnegative().optional(),
+  // Months after a DONE appointment before a recall reminder fires. Null clears it.
+  recallIntervalMonths: z.number().int().min(1).max(60).nullable().optional(),
 });
 export type ClinicServiceInput = z.infer<typeof clinicServiceSchema>;
 

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { CalendarClock, X } from "lucide-react";
 import { PageHeader } from "@/components/common/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -15,12 +16,15 @@ import { SlotGrid } from "@/components/booking/slot-grid";
 import { useClinics, useDoctors, useServices, useSlots } from "@/hooks/use-slots";
 import { useCreateAppointment } from "@/hooks/use-appointments";
 import { useJoinWaitlist, useMyWaitlist } from "@/hooks/use-waitlist";
+import { useMyRecalls, useDismissRecall } from "@/hooks/use-recalls";
 import { ApiError } from "@/lib/api-client";
 import { PageLoading } from "@/components/common/loading-spinner";
 import { formatDate, formatDayLabel } from "@/lib/utils";
 
 export default function PatientDashboardPage() {
   const { data: clinicsData } = useClinics();
+  const { data: recallsData } = useMyRecalls();
+  const dismissRecall = useDismissRecall();
 
   const [clinicId, setClinicId] = useState<string | null>(null);
   const [doctorId, setDoctorId] = useState<string | null>(null);
@@ -49,6 +53,16 @@ export default function PatientDashboardPage() {
   function handleDoctorChange(id: string) {
     setDoctorId(id);
     setServiceId(null);
+    setTime(null);
+  }
+
+  async function handleBookFromRecall(recallDoctorId: string, recallServiceId: string) {
+    // Jump straight to the doctor+service the recall is for, unfiltered by
+    // clinic so the doctor is guaranteed to show up regardless of which
+    // clinic (if any) is currently selected.
+    setClinicId(null);
+    setDoctorId(recallDoctorId);
+    setServiceId(recallServiceId);
     setTime(null);
   }
 
@@ -100,11 +114,48 @@ export default function PatientDashboardPage() {
 
   const canSubmit = doctorId && serviceId && date && time && !createAppointment.isPending;
   const showClinicStep = (clinicsData?.clinics.length ?? 0) > 1;
+  const recalls = recallsData?.recalls ?? [];
   const step = (n: number) => (showClinicStep ? n : n - 1);
 
   return (
     <div className="space-y-6">
       <PageHeader title="Book an appointment" description="Choose a doctor, service, and a free time slot." />
+
+      {recalls.length > 0 && (
+        <div className="space-y-3">
+          {recalls.map((recall) => (
+            <Card key={recall.id} className="border-primary/30 bg-primary/5">
+              <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-start gap-3">
+                  <CalendarClock className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
+                  <div>
+                    <p className="text-sm font-medium text-foreground">
+                      Time for your {recall.service.name.toLowerCase()} checkup
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      With Dr. {recall.doctor.name} · due {formatDate(recall.dueDate)}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button size="sm" onClick={() => handleBookFromRecall(recall.doctor.id, recall.service.id)}>
+                    Book now
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => dismissRecall.mutate(recall.id)}
+                    disabled={dismissRecall.isPending}
+                    aria-label="Dismiss"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
 
       {showClinicStep && (
         <Card>

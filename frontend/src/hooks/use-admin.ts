@@ -168,8 +168,12 @@ export function useAdminServices() {
 export function useCreateService() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (input: { name: string; durationMinutes: number; price?: number }) =>
-      apiFetch<{ service: ClinicService }>("/admin/services", { method: "POST", body: input }),
+    mutationFn: (input: {
+      name: string;
+      durationMinutes: number;
+      price?: number;
+      recallIntervalMonths?: number | null;
+    }) => apiFetch<{ service: ClinicService }>("/admin/services", { method: "POST", body: input }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-services"] });
       queryClient.invalidateQueries({ queryKey: ["services"] });
@@ -180,8 +184,16 @@ export function useCreateService() {
 export function useUpdateService() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, ...input }: { id: string; name?: string; durationMinutes?: number; price?: number }) =>
-      apiFetch<{ service: ClinicService }>(`/admin/services/${id}`, { method: "PATCH", body: input }),
+    mutationFn: ({
+      id,
+      ...input
+    }: {
+      id: string;
+      name?: string;
+      durationMinutes?: number;
+      price?: number;
+      recallIntervalMonths?: number | null;
+    }) => apiFetch<{ service: ClinicService }>(`/admin/services/${id}`, { method: "PATCH", body: input }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-services"] });
       queryClient.invalidateQueries({ queryKey: ["services"] });

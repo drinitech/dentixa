@@ -23,6 +23,7 @@ export interface ClinicService {
   durationMinutes: number;
   price: string | number | null;
   isActive?: boolean;
+  recallIntervalMonths?: number | null;
 }
 
 export interface Clinic {
@@ -123,6 +124,16 @@ export interface AdminUser {
   createdAt: string;
   clinicId?: string | null;
   clinic?: { id: string; name: string } | null;
+}
+
+export type RecallStatus = "PENDING" | "NOTIFIED" | "BOOKED" | "DISMISSED";
+
+export interface RecallReminder {
+  id: string;
+  dueDate: string;
+  status: RecallStatus;
+  doctor: { id: string; name: string };
+  service: { id: string; name: string };
 }
 
 export interface DoctorStats {
