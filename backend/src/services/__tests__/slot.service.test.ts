@@ -5,13 +5,15 @@ const {
   doctorScheduleFindMany,
   appointmentFindMany,
   scheduleExceptionFindUnique,
-  clinicHolidayFindUnique,
+  clinicHolidayFindFirst,
+  userFindUnique,
 } = vi.hoisted(() => ({
   clinicServiceFindUnique: vi.fn(),
   doctorScheduleFindMany: vi.fn(),
   appointmentFindMany: vi.fn(),
   scheduleExceptionFindUnique: vi.fn(),
-  clinicHolidayFindUnique: vi.fn(),
+  clinicHolidayFindFirst: vi.fn(),
+  userFindUnique: vi.fn(),
 }));
 
 vi.mock("../../lib/prisma", () => ({
@@ -20,7 +22,8 @@ vi.mock("../../lib/prisma", () => ({
     doctorSchedule: { findMany: doctorScheduleFindMany },
     appointment: { findMany: appointmentFindMany },
     scheduleException: { findUnique: scheduleExceptionFindUnique },
-    clinicHoliday: { findUnique: clinicHolidayFindUnique },
+    clinicHoliday: { findFirst: clinicHolidayFindFirst },
+    user: { findUnique: userFindUnique },
   },
 }));
 
@@ -31,7 +34,8 @@ describe("getFreeSlots", () => {
     vi.clearAllMocks();
     clinicServiceFindUnique.mockResolvedValue({ id: "svc-1", durationMinutes: 30, isActive: true });
     scheduleExceptionFindUnique.mockResolvedValue(null);
-    clinicHolidayFindUnique.mockResolvedValue(null);
+    clinicHolidayFindFirst.mockResolvedValue(null);
+    userFindUnique.mockResolvedValue({ clinicId: "clinic-1" });
   });
 
   it("returns every slot in the schedule window when nothing is booked", async () => {
@@ -81,7 +85,7 @@ describe("getFreeSlots", () => {
   });
 
   it("returns no slots on a clinic-wide holiday, for any doctor", async () => {
-    clinicHolidayFindUnique.mockResolvedValue({ id: "hol-1", date: new Date(), reason: "National holiday" });
+    clinicHolidayFindFirst.mockResolvedValue({ id: "hol-1", date: new Date(), reason: "National holiday" });
     doctorScheduleFindMany.mockResolvedValue([{ startTime: "09:00", endTime: "10:00" }]);
     appointmentFindMany.mockResolvedValue([]);
 

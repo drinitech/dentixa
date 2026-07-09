@@ -9,7 +9,8 @@ import {
   updateClinicServiceSchema,
   setDoctorServicesSchema,
 } from "../validations/service.schema";
-import { createClinicHolidaySchema } from "../validations/clinicHoliday.schema";
+import { createClinicHolidaySchema, listClinicHolidaysQuerySchema } from "../validations/clinicHoliday.schema";
+import { createClinicSchema, updateClinicSchema } from "../validations/clinic.schema";
 import {
   createDoctorHandler,
   listDoctorsHandler,
@@ -32,6 +33,9 @@ import {
   listClinicHolidaysHandler,
   createClinicHolidayHandler,
   deleteClinicHolidayHandler,
+  listAllClinicsHandler,
+  createClinicHandler,
+  updateClinicHandler,
 } from "../controllers/admin.controller";
 
 export const adminRouter = Router();
@@ -73,10 +77,18 @@ adminRouter.delete("/services/:id", deactivateServiceHandler);
 
 adminRouter.get("/stats", adminStatsHandler);
 
-adminRouter.get("/clinic-holidays", listClinicHolidaysHandler);
+adminRouter.get(
+  "/clinic-holidays",
+  validate(listClinicHolidaysQuerySchema, "query"),
+  listClinicHolidaysHandler,
+);
 adminRouter.post(
   "/clinic-holidays",
   validate(createClinicHolidaySchema),
   createClinicHolidayHandler,
 );
 adminRouter.delete("/clinic-holidays/:id", deleteClinicHolidayHandler);
+
+adminRouter.get("/clinics", listAllClinicsHandler);
+adminRouter.post("/clinics", validate(createClinicSchema), createClinicHandler);
+adminRouter.patch("/clinics/:id", validate(updateClinicSchema), updateClinicHandler);

@@ -59,6 +59,7 @@ export default function AdminDoctorsPage() {
                     <p className="text-sm text-muted-foreground">
                       {doctor.email}
                       {doctor.specialty ? ` · ${doctor.specialty}` : ""}
+                      {doctor.clinic ? ` · ${doctor.clinic.name}` : ""}
                     </p>
                   </div>
                 </div>

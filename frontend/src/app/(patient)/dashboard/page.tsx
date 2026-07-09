@@ -1,17 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/common/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { DoctorPicker } from "@/components/booking/doctor-picker";
 import { ServicePicker } from "@/components/booking/service-picker";
 import { CalendarPicker } from "@/components/booking/calendar-picker";
 import { SlotGrid } from "@/components/booking/slot-grid";
-import { useDoctors, useServices, useSlots } from "@/hooks/use-slots";
+import { useClinics, useDoctors, useServices, useSlots } from "@/hooks/use-slots";
 import { useCreateAppointment } from "@/hooks/use-appointments";
 import { useJoinWaitlist, useMyWaitlist } from "@/hooks/use-waitlist";
 import { ApiError } from "@/lib/api-client";
@@ -19,15 +20,31 @@ import { PageLoading } from "@/components/common/loading-spinner";
 import { formatDate, formatDayLabel } from "@/lib/utils";
 
 export default function PatientDashboardPage() {
-  const { data: doctorsData, isLoading: doctorsLoading } = useDoctors();
+  const { data: clinicsData } = useClinics();
 
+  const [clinicId, setClinicId] = useState<string | null>(null);
   const [doctorId, setDoctorId] = useState<string | null>(null);
   const [serviceId, setServiceId] = useState<string | null>(null);
   const [date, setDate] = useState<string | null>(null);
   const [time, setTime] = useState<string | null>(null);
   const [reason, setReason] = useState("");
 
+  // A single-clinic clinic never needs the patient to make a choice.
+  useEffect(() => {
+    if (clinicId === null && clinicsData?.clinics.length === 1) {
+      setClinicId(clinicsData.clinics[0].id);
+    }
+  }, [clinicId, clinicsData]);
+
+  const { data: doctorsData, isLoading: doctorsLoading } = useDoctors(clinicId ?? undefined);
   const { data: servicesData, isLoading: servicesLoading } = useServices(doctorId ?? undefined);
+
+  function handleClinicChange(id: string) {
+    setClinicId(id);
+    setDoctorId(null);
+    setServiceId(null);
+    setTime(null);
+  }
 
   function handleDoctorChange(id: string) {
     setDoctorId(id);
@@ -82,14 +99,43 @@ export default function PatientDashboardPage() {
   }
 
   const canSubmit = doctorId && serviceId && date && time && !createAppointment.isPending;
+  const showClinicStep = (clinicsData?.clinics.length ?? 0) > 1;
+  const step = (n: number) => (showClinicStep ? n : n - 1);
 
   return (
     <div className="space-y-6">
       <PageHeader title="Book an appointment" description="Choose a doctor, service, and a free time slot." />
 
+      {showClinicStep && (
+        <Card>
+          <CardHeader>
+            <CardTitle>1. Choose a clinic</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap gap-2">
+              {clinicsData?.clinics.map((clinic) => (
+                <button
+                  key={clinic.id}
+                  type="button"
+                  onClick={() => handleClinicChange(clinic.id)}
+                  className={cn(
+                    "rounded-lg border px-4 py-2 text-sm font-medium transition-colors",
+                    clinicId === clinic.id
+                      ? "border-primary bg-primary/5 text-primary ring-1 ring-primary"
+                      : "border-border text-foreground hover:border-primary/30 hover:bg-muted",
+                  )}
+                >
+                  {clinic.name}
+                </button>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       <Card>
         <CardHeader>
-          <CardTitle>1. Choose a doctor</CardTitle>
+          <CardTitle>{step(2)}. Choose a doctor</CardTitle>
         </CardHeader>
         <CardContent>
           <DoctorPicker doctors={doctors} value={doctorId} onChange={handleDoctorChange} />
@@ -98,7 +144,7 @@ export default function PatientDashboardPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>2. Choose a service</CardTitle>
+          <CardTitle>{step(3)}. Choose a service</CardTitle>
         </CardHeader>
         <CardContent>
           <ServicePicker services={services} value={serviceId} onChange={setServiceId} />
@@ -107,7 +153,7 @@ export default function PatientDashboardPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>3. Choose a date &amp; time</CardTitle>
+          <CardTitle>{step(4)}. Choose a date &amp; time</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col items-start gap-6 lg:flex-row lg:gap-8">
           <CalendarPicker
@@ -149,7 +195,7 @@ export default function PatientDashboardPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>4. Reason for visit (optional)</CardTitle>
+          <CardTitle>{step(5)}. Reason for visit (optional)</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-1.5">

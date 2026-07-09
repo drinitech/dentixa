@@ -20,11 +20,16 @@ const PUBLIC_USER_SELECT = {
   specialty: true,
   isActive: true,
   createdAt: true,
+  clinicId: true,
+  clinic: { select: { id: true, name: true } },
 } satisfies Prisma.UserSelect;
 
 export async function createDoctor(input: CreateDoctorInput) {
   const existing = await prisma.user.findUnique({ where: { email: input.email } });
   if (existing) throw new BadRequestError("An account with this email already exists");
+
+  const clinic = await prisma.clinic.findUnique({ where: { id: input.clinicId } });
+  if (!clinic) throw new BadRequestError("Selected clinic does not exist");
 
   const passwordHash = await bcrypt.hash(input.password, SALT_ROUNDS);
   const doctor = await prisma.user.create({
@@ -34,6 +39,7 @@ export async function createDoctor(input: CreateDoctorInput) {
       passwordHash,
       phone: input.phone,
       specialty: input.specialty,
+      clinicId: input.clinicId,
       role: "DOCTOR",
     },
     select: PUBLIC_USER_SELECT,
@@ -59,6 +65,11 @@ export async function updateDoctor(id: string, input: UpdateDoctorInput) {
     if (existing && existing.id !== id) {
       throw new BadRequestError("An account with this email already exists");
     }
+  }
+
+  if (input.clinicId) {
+    const clinic = await prisma.clinic.findUnique({ where: { id: input.clinicId } });
+    if (!clinic) throw new BadRequestError("Selected clinic does not exist");
   }
 
   return prisma.user.update({

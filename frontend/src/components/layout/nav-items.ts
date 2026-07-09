@@ -8,6 +8,7 @@ import {
   BarChart3,
   Settings,
   CalendarOff,
+  Building2,
 } from "lucide-react";
 import type { NavItem } from "./app-shell";
 import type { Role } from "@/types";
@@ -28,6 +29,7 @@ export const doctorNav: NavItem[] = [
 
 export const adminNav: NavItem[] = [
   { label: "Overview", href: "/admin/dashboard", icon: BarChart3 },
+  { label: "Clinics", href: "/admin/clinics", icon: Building2 },
   { label: "Doctors", href: "/admin/doctors", icon: Stethoscope },
   { label: "Users", href: "/admin/users", icon: Users },
   { label: "Appointments", href: "/admin/appointments", icon: CalendarDays },

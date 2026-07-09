@@ -25,12 +25,22 @@ export interface ClinicService {
   isActive?: boolean;
 }
 
+export interface Clinic {
+  id: string;
+  name: string;
+  address: string | null;
+  phone: string | null;
+  isActive?: boolean;
+}
+
 export interface DoctorSummary {
   id: string;
   name: string;
   email: string;
   avatarUrl: string | null;
   specialty: string | null;
+  clinicId?: string | null;
+  clinic?: { id: string; name: string } | null;
   averageRating?: number | null;
   reviewCount?: number;
 }
@@ -111,6 +121,8 @@ export interface AdminUser {
   specialty: string | null;
   isActive: boolean;
   createdAt: string;
+  clinicId?: string | null;
+  clinic?: { id: string; name: string } | null;
 }
 
 export interface DoctorStats {

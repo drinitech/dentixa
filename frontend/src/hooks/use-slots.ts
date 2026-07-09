@@ -2,12 +2,19 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { apiFetch } from "@/lib/api-client";
-import type { ClinicService, DoctorSummary } from "@/types";
+import type { Clinic, ClinicService, DoctorSummary } from "@/types";
 
-export function useDoctors() {
+export function useClinics() {
   return useQuery({
-    queryKey: ["doctors"],
-    queryFn: () => apiFetch<{ doctors: DoctorSummary[] }>("/doctors"),
+    queryKey: ["clinics"],
+    queryFn: () => apiFetch<{ clinics: Clinic[] }>("/clinics"),
+  });
+}
+
+export function useDoctors(clinicId?: string) {
+  return useQuery({
+    queryKey: ["doctors", clinicId],
+    queryFn: () => apiFetch<{ doctors: DoctorSummary[] }>(`/doctors${clinicId ? `?clinicId=${clinicId}` : ""}`),
   });
 }
 

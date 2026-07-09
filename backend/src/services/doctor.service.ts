@@ -1,9 +1,17 @@
 import { prisma } from "../lib/prisma";
 
-export async function listActiveDoctors() {
+export async function listActiveDoctors(clinicId?: string) {
   const doctors = await prisma.user.findMany({
-    where: { role: "DOCTOR", isActive: true },
-    select: { id: true, name: true, email: true, avatarUrl: true, specialty: true },
+    where: { role: "DOCTOR", isActive: true, ...(clinicId ? { clinicId } : {}) },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      avatarUrl: true,
+      specialty: true,
+      clinicId: true,
+      clinic: { select: { id: true, name: true } },
+    },
     orderBy: { name: "asc" },
   });
 

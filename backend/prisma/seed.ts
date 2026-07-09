@@ -17,6 +17,12 @@ async function seedNotificationPreferences(userId: string) {
 }
 
 async function main() {
+  const mainClinic = await prisma.clinic.upsert({
+    where: { id: "default-clinic" },
+    update: {},
+    create: { id: "default-clinic", name: "Klinika Kryesore" },
+  });
+
   const adminPasswordHash = await bcrypt.hash("admin123", SALT_ROUNDS);
   const admin = await prisma.user.upsert({
     where: { email: "admin@dentixa.com" },
@@ -34,7 +40,13 @@ async function main() {
       prisma.user.upsert({
         where: { email: d.email },
         update: {},
-        create: { ...d, passwordHash: doctorPasswordHash, role: "DOCTOR", phone: "+355600000000" },
+        create: {
+          ...d,
+          passwordHash: doctorPasswordHash,
+          role: "DOCTOR",
+          phone: "+355600000000",
+          clinicId: mainClinic.id,
+        },
       }),
     ),
   );

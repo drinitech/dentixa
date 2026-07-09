@@ -4,6 +4,7 @@ import * as adminService from "../services/admin.service";
 import * as appointmentService from "../services/appointment.service";
 import * as clinicServiceService from "../services/clinicService.service";
 import * as clinicHolidayService from "../services/clinicHoliday.service";
+import * as clinicService from "../services/clinic.service";
 import * as statsService from "../services/stats.service";
 import { notifyWaitlistIfSlotsOpened } from "../services/waitlist.service";
 import { buildAppointmentsWorkbook } from "../lib/excel";
@@ -111,8 +112,9 @@ export const adminStatsHandler = asyncHandler(async (_req: Request, res: Respons
   res.json({ stats });
 });
 
-export const listClinicHolidaysHandler = asyncHandler(async (_req: Request, res: Response) => {
-  const holidays = await clinicHolidayService.listClinicHolidays();
+export const listClinicHolidaysHandler = asyncHandler(async (req: Request, res: Response) => {
+  const { clinicId } = req.query as { clinicId?: string };
+  const holidays = await clinicHolidayService.listClinicHolidays(clinicId);
   res.json({ holidays });
 });
 
@@ -124,4 +126,19 @@ export const createClinicHolidayHandler = asyncHandler(async (req: Request, res:
 export const deleteClinicHolidayHandler = asyncHandler(async (req: Request, res: Response) => {
   await clinicHolidayService.removeClinicHoliday(req.params.id);
   res.status(204).send();
+});
+
+export const listAllClinicsHandler = asyncHandler(async (_req: Request, res: Response) => {
+  const clinics = await clinicService.listAllClinics();
+  res.json({ clinics });
+});
+
+export const createClinicHandler = asyncHandler(async (req: Request, res: Response) => {
+  const clinic = await clinicService.createClinic(req.body);
+  res.status(201).json({ clinic });
+});
+
+export const updateClinicHandler = asyncHandler(async (req: Request, res: Response) => {
+  const clinic = await clinicService.updateClinic(req.params.id, req.body);
+  res.json({ clinic });
 });

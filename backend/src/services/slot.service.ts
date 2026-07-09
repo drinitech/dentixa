@@ -15,9 +15,16 @@ export async function getFreeSlots(doctorId: string, date: string, serviceId: st
   const dateObj = parseDateOnly(date);
   const dayOfWeek = dateObj.getUTCDay();
 
+  const doctor = await prisma.user.findUnique({ where: { id: doctorId }, select: { clinicId: true } });
+
   const [exception, holiday] = await Promise.all([
     prisma.scheduleException.findUnique({ where: { doctorId_date: { doctorId, date: dateObj } } }),
-    prisma.clinicHoliday.findUnique({ where: { date: dateObj } }),
+    // A holiday applies here if it's global (clinicId null) or scoped to this doctor's own clinic.
+    prisma.clinicHoliday.findFirst({
+      where: doctor?.clinicId
+        ? { date: dateObj, OR: [{ clinicId: null }, { clinicId: doctor.clinicId }] }
+        : { date: dateObj, clinicId: null },
+    }),
   ]);
   if (exception || holiday) return [];
 

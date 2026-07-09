@@ -47,6 +47,11 @@ model User {
   phone        String?
   // Doctor-only, self-set (e.g. "Orthodontist") — null/ignored for other roles.
   specialty    String?
+  // Doctor-only: which clinic location they work at. Nullable at the DB
+  // level (existing non-doctor rows never set it) but required by app-layer
+  // validation whenever a new doctor account is created.
+  clinicId     String?
+  clinic       Clinic?  @relation(fields: [clinicId], references: [id], onDelete: SetNull)
   // Stored as a data: URI (small, resized client-side before upload) rather
   // than a filesystem path — Render's disk isn't persisted across deploys.
   avatarUrl    String?  @db.Text
@@ -77,6 +82,23 @@ model User {
   waitlistAsDoctor        Waitlist[]                @relation("DoctorWaitlist")
 
   @@index([role])
+  @@index([clinicId])
+}
+
+// A clinic location. Doctors belong to exactly one; the service catalog
+// (ClinicService) stays shared across all clinics rather than per-location —
+// confirmed with the user that price/duration doesn't vary by location.
+model Clinic {
+  id        String   @id @default(cuid())
+  name      String
+  address   String?
+  phone     String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  doctors  User[]
+  holidays ClinicHoliday[]
 }
 
 model ClinicService {
@@ -123,14 +145,20 @@ model ScheduleException {
   @@index([doctorId])
 }
 
-// Clinic-wide closure (national holiday, etc.) — unlike ScheduleException
-// this isn't tied to one doctor; getFreeSlots treats it as zero slots for
-// every doctor on that date. Admin-managed.
+// A closure — either clinic-wide (clinicId set, unlike ScheduleException
+// which is per-doctor) or company-wide across every clinic (clinicId null,
+// e.g. a national holiday). getFreeSlots treats a matching holiday as zero
+// slots for every doctor it applies to. Admin-managed.
 model ClinicHoliday {
   id        String   @id @default(cuid())
-  date      DateTime @db.Date @unique
+  clinicId  String?
+  clinic    Clinic?  @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  date      DateTime @db.Date
   reason    String?
   createdAt DateTime @default(now())
+
+  @@unique([clinicId, date])
+  @@index([clinicId])
 }
 
 // A patient asking to be emailed if a slot opens up for a doctor+service+date
