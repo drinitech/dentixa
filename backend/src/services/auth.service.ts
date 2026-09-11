@@ -27,6 +27,21 @@ function issueTokens(user: { id: string; role: any; name: string; tokenVersion: 
   return { accessToken, refreshToken };
 }
 
+// The frontend doesn't ask "which clinic" at login (there's no multi-clinic
+// picker UI yet, and today every user has at most one Membership anyway) —
+// it needs this to know which /c/[slug] to land the user in after a global
+// login. Picks the oldest active Membership, which is the only one that
+// exists for any current user; once one person can belong to several real
+// tenants (Milestone 3+), this is the seam where a clinic-picker step goes.
+async function getPrimaryTenantSlug(userId: string): Promise<string | null> {
+  const membership = await prisma.membership.findFirst({
+    where: { userId, status: "ACTIVE" },
+    orderBy: { createdAt: "asc" },
+    include: { tenant: { select: { slug: true } } },
+  });
+  return membership?.tenant.slug ?? null;
+}
+
 export async function register(input: RegisterInput) {
   const existing = await prisma.user.findUnique({ where: { email: input.email } });
   if (existing) {
@@ -54,7 +69,8 @@ export async function register(input: RegisterInput) {
   await prisma.membership.create({ data: { userId: user.id, tenantId: DEFAULT_TENANT_ID, role: "PATIENT" } });
 
   const tokens = issueTokens(user);
-  return { user, ...tokens };
+  const tenantSlug = await getPrimaryTenantSlug(user.id);
+  return { user, tenantSlug, ...tokens };
 }
 
 export async function login(input: LoginInput) {
@@ -72,7 +88,8 @@ export async function login(input: LoginInput) {
   }
 
   const tokens = issueTokens(user);
-  return { user, ...tokens };
+  const tenantSlug = await getPrimaryTenantSlug(user.id);
+  return { user, tenantSlug, ...tokens };
 }
 
 export async function refresh(refreshToken: string) {
@@ -89,7 +106,8 @@ export async function refresh(refreshToken: string) {
   }
 
   const tokens = issueTokens(user);
-  return { user, ...tokens };
+  const tenantSlug = await getPrimaryTenantSlug(user.id);
+  return { user, tenantSlug, ...tokens };
 }
 
 // Self-service, from an already-authenticated session. Bumps tokenVersion
@@ -109,7 +127,8 @@ export async function changePassword(userId: string, input: ChangePasswordInput)
   });
 
   const tokens = issueTokens(updated);
-  return { user: updated, ...tokens };
+  const tenantSlug = await getPrimaryTenantSlug(updated.id);
+  return { user: updated, tenantSlug, ...tokens };
 }
 
 // Always resolves the same way regardless of whether the email exists, so the

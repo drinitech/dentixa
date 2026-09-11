@@ -43,24 +43,24 @@ function serializeUser(user: {
 }
 
 export const registerHandler = asyncHandler(async (req: Request, res: Response) => {
-  const { user, accessToken, refreshToken } = await authService.register(req.body);
+  const { user, tenantSlug, accessToken, refreshToken } = await authService.register(req.body);
   setRefreshCookie(res, refreshToken);
-  res.status(201).json({ user: serializeUser(user), accessToken });
+  res.status(201).json({ user: serializeUser(user), tenantSlug, accessToken });
 });
 
 export const loginHandler = asyncHandler(async (req: Request, res: Response) => {
-  const { user, accessToken, refreshToken } = await authService.login(req.body);
+  const { user, tenantSlug, accessToken, refreshToken } = await authService.login(req.body);
   setRefreshCookie(res, refreshToken);
-  res.json({ user: serializeUser(user), accessToken });
+  res.json({ user: serializeUser(user), tenantSlug, accessToken });
 });
 
 export const refreshHandler = asyncHandler(async (req: Request, res: Response) => {
   const token = req.cookies?.[REFRESH_COOKIE_NAME];
   if (!token) throw new UnauthorizedError("No refresh token provided");
 
-  const { user, accessToken, refreshToken } = await authService.refresh(token);
+  const { user, tenantSlug, accessToken, refreshToken } = await authService.refresh(token);
   setRefreshCookie(res, refreshToken);
-  res.json({ user: serializeUser(user), accessToken });
+  res.json({ user: serializeUser(user), tenantSlug, accessToken });
 });
 
 export const logoutHandler = asyncHandler(async (req: Request, res: Response) => {
@@ -74,9 +74,9 @@ export const meHandler = asyncHandler(async (req: Request, res: Response) => {
 });
 
 export const changePasswordHandler = asyncHandler(async (req: Request, res: Response) => {
-  const { user, accessToken, refreshToken } = await authService.changePassword(req.user!.id, req.body);
+  const { user, tenantSlug, accessToken, refreshToken } = await authService.changePassword(req.user!.id, req.body);
   setRefreshCookie(res, refreshToken);
-  res.json({ user: serializeUser(user), accessToken });
+  res.json({ user: serializeUser(user), tenantSlug, accessToken });
 });
 
 export const forgotPasswordHandler = asyncHandler(async (req: Request, res: Response) => {
