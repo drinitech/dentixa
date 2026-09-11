@@ -1,5 +1,6 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "../lib/prisma";
+import { DEFAULT_TENANT_ID } from "../lib/tenant";
 import { NotFoundError } from "../errors/NotFoundError";
 import { BadRequestError } from "../errors/BadRequestError";
 import { ForbiddenError } from "../errors/ForbiddenError";
@@ -65,6 +66,7 @@ export async function createAppointment(patientId: string, input: CreateAppointm
   try {
     const created = await prisma.appointment.create({
       data: {
+        tenantId: DEFAULT_TENANT_ID,
         patientId,
         doctorId: input.doctorId,
         serviceId: input.serviceId,
@@ -275,13 +277,14 @@ export async function approveAppointment(id: string, doctorId: string): Promise<
 
     await tx.$queryRaw`
       SELECT id FROM "Appointment"
-      WHERE "doctorId" = ${appt.doctorId} AND "date" = ${appt.date}
+      WHERE "tenantId" = ${appt.tenantId} AND "doctorId" = ${appt.doctorId} AND "date" = ${appt.date}
         AND status IN ('PENDING', 'APPROVED')
       FOR UPDATE
     `;
 
     const sameDayActive = await tx.appointment.findMany({
       where: {
+        tenantId: appt.tenantId,
         doctorId: appt.doctorId,
         date: appt.date,
         status: "PENDING",

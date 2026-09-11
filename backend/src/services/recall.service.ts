@@ -1,6 +1,7 @@
 import { prisma } from "../lib/prisma";
 import { NotFoundError } from "../errors/NotFoundError";
 import { ForbiddenError } from "../errors/ForbiddenError";
+import { DEFAULT_TENANT_ID } from "../lib/tenant";
 
 function addMonths(date: Date, months: number): Date {
   const d = new Date(date);
@@ -24,6 +25,7 @@ export async function scheduleRecall(appt: SourceAppointment, intervalMonths: nu
   if (!appt.serviceId) return;
   await prisma.recallReminder.create({
     data: {
+      tenantId: DEFAULT_TENANT_ID,
       patientId: appt.patientId,
       doctorId: appt.doctorId,
       serviceId: appt.serviceId,

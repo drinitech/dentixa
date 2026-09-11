@@ -1,5 +1,6 @@
 import { prisma } from "../lib/prisma";
 import { NotFoundError } from "../errors/NotFoundError";
+import { DEFAULT_TENANT_ID } from "../lib/tenant";
 import type { ClinicServiceInput } from "../validations/service.schema";
 
 export async function listActiveServices(doctorId?: string) {
@@ -30,7 +31,7 @@ export async function listAllServices() {
 }
 
 export async function createService(input: ClinicServiceInput) {
-  return prisma.clinicService.create({ data: input });
+  return prisma.clinicService.create({ data: { ...input, tenantId: DEFAULT_TENANT_ID } });
 }
 
 export async function updateService(id: string, input: Partial<ClinicServiceInput>) {

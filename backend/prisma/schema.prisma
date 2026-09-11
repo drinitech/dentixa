@@ -81,7 +81,16 @@ model Tenant {
   createdAt DateTime     @default(now())
   updatedAt DateTime     @updatedAt
 
-  memberships Membership[]
+  memberships        Membership[]
+  locations          Location[]
+  services           ClinicService[]
+  doctorSchedules    DoctorSchedule[]
+  scheduleExceptions ScheduleException[]
+  holidays           ClinicHoliday[]
+  waitlistEntries    Waitlist[]
+  appointments       Appointment[]
+  recallReminders    RecallReminder[]
+  reviews            Review[]
 }
 
 // A user's role within one tenant. A User is global (one account can work
@@ -158,6 +167,8 @@ model User {
 // confirmed with the user that price/duration doesn't vary by location.
 model Location {
   id        String   @id @default(cuid())
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   name      String
   address   String?
   phone     String?
@@ -167,10 +178,14 @@ model Location {
 
   doctors  User[]
   holidays ClinicHoliday[]
+
+  @@index([tenantId])
 }
 
 model ClinicService {
   id              String   @id @default(cuid())
+  tenantId        String
+  tenant          Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   name            String
   durationMinutes Int
   price           Decimal? @db.Decimal(10, 2)
@@ -186,10 +201,14 @@ model ClinicService {
   offeredByDoctors  User[]       @relation("DoctorServices")
   waitlistEntries   Waitlist[]
   recallReminders   RecallReminder[]
+
+  @@index([tenantId])
 }
 
 model DoctorSchedule {
   id        String   @id @default(cuid())
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   doctorId  String
   doctor    User     @relation("DoctorSchedules", fields: [doctorId], references: [id], onDelete: Cascade)
   dayOfWeek Int // 0 = Sunday .. 6 = Saturday
@@ -198,8 +217,11 @@ model DoctorSchedule {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@unique([doctorId, dayOfWeek, startTime, endTime])
-  @@index([doctorId])
+  // tenantId is part of the unique key (not just doctorId) because one User
+  // can be a DOCTOR via Membership in more than one tenant — the same
+  // person's schedule at two unrelated clinics must not collide.
+  @@unique([tenantId, doctorId, dayOfWeek, startTime, endTime])
+  @@index([tenantId, doctorId])
 }
 
 // A specific full-day date the doctor is unavailable (holiday/time off),
@@ -208,14 +230,16 @@ model DoctorSchedule {
 // windows that would otherwise apply.
 model ScheduleException {
   id        String   @id @default(cuid())
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   doctorId  String
   doctor    User     @relation("DoctorScheduleExceptions", fields: [doctorId], references: [id], onDelete: Cascade)
   date      DateTime @db.Date
   reason    String?
   createdAt DateTime @default(now())
 
-  @@unique([doctorId, date])
-  @@index([doctorId])
+  @@unique([tenantId, doctorId, date])
+  @@index([tenantId, doctorId])
 }
 
 // A closure — either location-wide (locationId set, unlike ScheduleException
@@ -224,14 +248,16 @@ model ScheduleException {
 // slots for every doctor it applies to. Admin-managed.
 model ClinicHoliday {
   id         String    @id @default(cuid())
+  tenantId   String
+  tenant     Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   locationId String?
   location   Location? @relation(fields: [locationId], references: [id], onDelete: Cascade)
   date       DateTime  @db.Date
   reason     String?
   createdAt  DateTime  @default(now())
 
-  @@unique([locationId, date])
-  @@index([locationId])
+  @@unique([tenantId, locationId, date])
+  @@index([tenantId, locationId])
 }
 
 // A patient asking to be emailed if a slot opens up for a doctor+service+date
@@ -239,6 +265,8 @@ model ClinicHoliday {
 // not a standing subscription, since slots fill fast.
 model Waitlist {
   id        String   @id @default(cuid())
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   patientId String
   patient   User     @relation("PatientWaitlist", fields: [patientId], references: [id], onDelete: Cascade)
   doctorId  String
@@ -248,12 +276,14 @@ model Waitlist {
   date      DateTime @db.Date
   createdAt DateTime @default(now())
 
-  @@unique([patientId, doctorId, serviceId, date])
-  @@index([doctorId, date])
+  @@unique([tenantId, patientId, doctorId, serviceId, date])
+  @@index([tenantId, doctorId, date])
 }
 
 model Appointment {
   id       String @id @default(cuid())
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   patientId String
   patient   User   @relation("PatientAppointments", fields: [patientId], references: [id], onDelete: Cascade)
   doctorId  String
@@ -283,10 +313,14 @@ model Appointment {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@index([doctorId, date])
-  @@index([patientId])
-  @@index([status])
-  @@index([date])
+  // tenantId leads every index/constraint here, not just for query performance:
+  // once one User can be a DOCTOR via Membership in multiple tenants, a bare
+  // (doctorId, date, time) uniqueness check would wrongly block that person
+  // from holding appointments at two unrelated clinics in the same slot.
+  @@index([tenantId, doctorId, date])
+  @@index([tenantId, patientId])
+  @@index([tenantId, status])
+  @@index([tenantId, date])
 }
 
 // Created when a DONE appointment's service has a recallIntervalMonths set —
@@ -295,6 +329,8 @@ model Appointment {
 // happens, see recall.service.ts / appointment.service.ts).
 model RecallReminder {
   id        String       @id @default(cuid())
+  tenantId  String
+  tenant    Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   patientId String
   patient   User         @relation("PatientRecalls", fields: [patientId], references: [id], onDelete: Cascade)
   doctorId  String
@@ -310,8 +346,8 @@ model RecallReminder {
   status     RecallStatus @default(PENDING)
   createdAt  DateTime     @default(now())
 
-  @@index([patientId, status])
-  @@index([dueDate, status])
+  @@index([tenantId, patientId, status])
+  @@index([tenantId, dueDate, status])
 }
 
 // One review per appointment, only left once the visit is DONE. Denormalizes
@@ -319,6 +355,8 @@ model RecallReminder {
 // patient-history queries don't need a join through Appointment.
 model Review {
   id            String   @id @default(cuid())
+  tenantId      String
+  tenant        Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   appointmentId String   @unique
   appointment   Appointment @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
   patientId     String
@@ -329,7 +367,7 @@ model Review {
   comment       String?  @db.Text
   createdAt     DateTime @default(now())
 
-  @@index([doctorId])
+  @@index([tenantId, doctorId])
 }
 
 model NotificationPreference {

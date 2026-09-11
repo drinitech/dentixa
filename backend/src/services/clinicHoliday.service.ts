@@ -1,5 +1,6 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "../lib/prisma";
+import { DEFAULT_TENANT_ID } from "../lib/tenant";
 import { ConflictError } from "../errors/ConflictError";
 import { NotFoundError } from "../errors/NotFoundError";
 import type { CreateClinicHolidayInput } from "../validations/clinicHoliday.schema";
@@ -34,7 +35,7 @@ export async function addClinicHoliday(input: CreateClinicHolidayInput) {
 
   try {
     return await prisma.clinicHoliday.create({
-      data: { date: parseDateOnly(input.date), reason: input.reason, locationId },
+      data: { tenantId: DEFAULT_TENANT_ID, date: parseDateOnly(input.date), reason: input.reason, locationId },
     });
   } catch (err) {
     if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {

@@ -1,5 +1,6 @@
 import { prisma } from "../lib/prisma";
 import { NotFoundError } from "../errors/NotFoundError";
+import { DEFAULT_TENANT_ID } from "../lib/tenant";
 import type { CreateLocationInput, UpdateLocationInput } from "../validations/location.schema";
 
 export async function listAllLocations() {
@@ -11,7 +12,7 @@ export async function listActiveLocations() {
 }
 
 export async function createLocation(input: CreateLocationInput) {
-  return prisma.location.create({ data: input });
+  return prisma.location.create({ data: { ...input, tenantId: DEFAULT_TENANT_ID } });
 }
 
 export async function updateLocation(id: string, input: UpdateLocationInput) {

@@ -1,6 +1,7 @@
 import { prisma } from "../lib/prisma";
 import { minutesToTime, timeToMinutes, rangesOverlap, getClinicNow } from "../lib/time";
 import { NotFoundError } from "../errors/NotFoundError";
+import { DEFAULT_TENANT_ID } from "../lib/tenant";
 
 // Parses a "YYYY-MM-DD" string as a UTC calendar date, matching how it's stored
 // in Postgres via @db.Date (avoids local-timezone off-by-one-day drift).
@@ -18,20 +19,22 @@ export async function getFreeSlots(doctorId: string, date: string, serviceId: st
   const doctor = await prisma.user.findUnique({ where: { id: doctorId }, select: { locationId: true } });
 
   const [exception, holiday] = await Promise.all([
-    prisma.scheduleException.findUnique({ where: { doctorId_date: { doctorId, date: dateObj } } }),
+    prisma.scheduleException.findUnique({
+      where: { tenantId_doctorId_date: { tenantId: DEFAULT_TENANT_ID, doctorId, date: dateObj } },
+    }),
     // A holiday applies here if it's global (locationId null) or scoped to this doctor's own location.
     prisma.clinicHoliday.findFirst({
       where: doctor?.locationId
-        ? { date: dateObj, OR: [{ locationId: null }, { locationId: doctor.locationId }] }
-        : { date: dateObj, locationId: null },
+        ? { tenantId: DEFAULT_TENANT_ID, date: dateObj, OR: [{ locationId: null }, { locationId: doctor.locationId }] }
+        : { tenantId: DEFAULT_TENANT_ID, date: dateObj, locationId: null },
     }),
   ]);
   if (exception || holiday) return [];
 
   const [schedules, booked] = await Promise.all([
-    prisma.doctorSchedule.findMany({ where: { doctorId, dayOfWeek } }),
+    prisma.doctorSchedule.findMany({ where: { tenantId: DEFAULT_TENANT_ID, doctorId, dayOfWeek } }),
     prisma.appointment.findMany({
-      where: { doctorId, date: dateObj, status: "APPROVED" },
+      where: { tenantId: DEFAULT_TENANT_ID, doctorId, date: dateObj, status: "APPROVED" },
       select: { time: true, durationMinutes: true },
     }),
   ]);

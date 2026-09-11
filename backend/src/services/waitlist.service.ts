@@ -6,6 +6,7 @@ import { ConflictError } from "../errors/ConflictError";
 import { BadRequestError } from "../errors/BadRequestError";
 import { getFreeSlots } from "./slot.service";
 import { sendEmail } from "./notification.service";
+import { DEFAULT_TENANT_ID } from "../lib/tenant";
 import type { JoinWaitlistInput } from "../validations/waitlist.schema";
 
 function parseDateOnly(date: string): Date {
@@ -25,7 +26,13 @@ export async function joinWaitlist(patientId: string, input: JoinWaitlistInput) 
 
   try {
     return await prisma.waitlist.create({
-      data: { patientId, doctorId: input.doctorId, serviceId: input.serviceId, date: parseDateOnly(input.date) },
+      data: {
+        tenantId: DEFAULT_TENANT_ID,
+        patientId,
+        doctorId: input.doctorId,
+        serviceId: input.serviceId,
+        date: parseDateOnly(input.date),
+      },
       include: waitlistInclude,
     });
   } catch (err) {

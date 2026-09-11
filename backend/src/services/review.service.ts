@@ -2,6 +2,7 @@ import { prisma } from "../lib/prisma";
 import { NotFoundError } from "../errors/NotFoundError";
 import { ForbiddenError } from "../errors/ForbiddenError";
 import { ConflictError } from "../errors/ConflictError";
+import { DEFAULT_TENANT_ID } from "../lib/tenant";
 import type { CreateReviewInput } from "../validations/review.schema";
 
 export async function createReview(appointmentId: string, patientId: string, input: CreateReviewInput) {
@@ -15,6 +16,7 @@ export async function createReview(appointmentId: string, patientId: string, inp
 
   return prisma.review.create({
     data: {
+      tenantId: DEFAULT_TENANT_ID,
       appointmentId,
       patientId,
       doctorId: appt.doctorId,
