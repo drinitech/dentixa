@@ -10,7 +10,7 @@ import {
   setDoctorServicesSchema,
 } from "../validations/service.schema";
 import { createClinicHolidaySchema, listClinicHolidaysQuerySchema } from "../validations/clinicHoliday.schema";
-import { createClinicSchema, updateClinicSchema } from "../validations/clinic.schema";
+import { createLocationSchema, updateLocationSchema } from "../validations/location.schema";
 import {
   createDoctorHandler,
   listDoctorsHandler,
@@ -33,9 +33,9 @@ import {
   listClinicHolidaysHandler,
   createClinicHolidayHandler,
   deleteClinicHolidayHandler,
-  listAllClinicsHandler,
-  createClinicHandler,
-  updateClinicHandler,
+  listAllLocationsHandler,
+  createLocationHandler,
+  updateLocationHandler,
 } from "../controllers/admin.controller";
 
 export const adminRouter = Router();
@@ -89,6 +89,6 @@ adminRouter.post(
 );
 adminRouter.delete("/clinic-holidays/:id", deleteClinicHolidayHandler);
 
-adminRouter.get("/clinics", listAllClinicsHandler);
-adminRouter.post("/clinics", validate(createClinicSchema), createClinicHandler);
-adminRouter.patch("/clinics/:id", validate(updateClinicSchema), updateClinicHandler);
+adminRouter.get("/locations", listAllLocationsHandler);
+adminRouter.post("/locations", validate(createLocationSchema), createLocationHandler);
+adminRouter.patch("/locations/:id", validate(updateLocationSchema), updateLocationHandler);

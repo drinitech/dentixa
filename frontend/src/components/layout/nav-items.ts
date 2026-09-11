@@ -29,7 +29,7 @@ export const doctorNav: NavItem[] = [
 
 export const adminNav: NavItem[] = [
   { label: "Overview", href: "/admin/dashboard", icon: BarChart3 },
-  { label: "Clinics", href: "/admin/clinics", icon: Building2 },
+  { label: "Locations", href: "/admin/locations", icon: Building2 },
   { label: "Doctors", href: "/admin/doctors", icon: Stethoscope },
   { label: "Users", href: "/admin/users", icon: Users },
   { label: "Appointments", href: "/admin/appointments", icon: CalendarDays },

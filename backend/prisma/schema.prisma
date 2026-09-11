@@ -57,8 +57,8 @@ model User {
   // Doctor-only: which clinic location they work at. Nullable at the DB
   // level (existing non-doctor rows never set it) but required by app-layer
   // validation whenever a new doctor account is created.
-  clinicId     String?
-  clinic       Clinic?  @relation(fields: [clinicId], references: [id], onDelete: SetNull)
+  locationId   String?
+  location     Location? @relation(fields: [locationId], references: [id], onDelete: SetNull)
   // Stored as a data: URI (small, resized client-side before upload) rather
   // than a filesystem path — Render's disk isn't persisted across deploys.
   avatarUrl    String?  @db.Text
@@ -91,13 +91,13 @@ model User {
   recallsAsDoctor         RecallReminder[]          @relation("DoctorRecalls")
 
   @@index([role])
-  @@index([clinicId])
+  @@index([locationId])
 }
 
 // A clinic location. Doctors belong to exactly one; the service catalog
-// (ClinicService) stays shared across all clinics rather than per-location —
+// (ClinicService) stays shared across all locations rather than per-location —
 // confirmed with the user that price/duration doesn't vary by location.
-model Clinic {
+model Location {
   id        String   @id @default(cuid())
   name      String
   address   String?
@@ -159,20 +159,20 @@ model ScheduleException {
   @@index([doctorId])
 }
 
-// A closure — either clinic-wide (clinicId set, unlike ScheduleException
-// which is per-doctor) or company-wide across every clinic (clinicId null,
+// A closure — either location-wide (locationId set, unlike ScheduleException
+// which is per-doctor) or company-wide across every location (locationId null,
 // e.g. a national holiday). getFreeSlots treats a matching holiday as zero
 // slots for every doctor it applies to. Admin-managed.
 model ClinicHoliday {
-  id        String   @id @default(cuid())
-  clinicId  String?
-  clinic    Clinic?  @relation(fields: [clinicId], references: [id], onDelete: Cascade)
-  date      DateTime @db.Date
-  reason    String?
-  createdAt DateTime @default(now())
+  id         String    @id @default(cuid())
+  locationId String?
+  location   Location? @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  date       DateTime  @db.Date
+  reason     String?
+  createdAt  DateTime  @default(now())
 
-  @@unique([clinicId, date])
-  @@index([clinicId])
+  @@unique([locationId, date])
+  @@index([locationId])
 }
 
 // A patient asking to be emailed if a slot opens up for a doctor+service+date

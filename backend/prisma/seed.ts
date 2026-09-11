@@ -17,7 +17,7 @@ async function seedNotificationPreferences(userId: string) {
 }
 
 async function main() {
-  const mainClinic = await prisma.clinic.upsert({
+  const mainLocation = await prisma.location.upsert({
     where: { id: "default-clinic" },
     update: {},
     create: { id: "default-clinic", name: "Klinika Kryesore" },
@@ -45,7 +45,7 @@ async function main() {
           passwordHash: doctorPasswordHash,
           role: "DOCTOR",
           phone: "+355600000000",
-          clinicId: mainClinic.id,
+          locationId: mainLocation.id,
         },
       }),
     ),

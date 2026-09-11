@@ -10,12 +10,12 @@ import { Select } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { createDoctorSchema, type CreateDoctorFormInput } from "@/lib/validations";
 import { useCreateDoctor } from "@/hooks/use-admin";
-import { useClinics } from "@/hooks/use-slots";
+import { useLocations } from "@/hooks/use-slots";
 import { ApiError } from "@/lib/api-client";
 
 export function DoctorForm({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
   const createDoctor = useCreateDoctor();
-  const { data: clinicsData } = useClinics();
+  const { data: locationsData } = useLocations();
   const {
     register,
     handleSubmit,
@@ -56,16 +56,16 @@ export function DoctorForm({ open, onOpenChange }: { open: boolean; onOpenChange
           <Input id="doctor-specialty" placeholder="e.g. Orthodontist" {...register("specialty")} />
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="doctor-clinic">Clinic</Label>
-          <Select id="doctor-clinic" {...register("clinicId")}>
-            <option value="">Select a clinic…</option>
-            {clinicsData?.clinics.map((clinic) => (
-              <option key={clinic.id} value={clinic.id}>
-                {clinic.name}
+          <Label htmlFor="doctor-location">Location</Label>
+          <Select id="doctor-location" {...register("locationId")}>
+            <option value="">Select a location…</option>
+            {locationsData?.locations.map((location) => (
+              <option key={location.id} value={location.id}>
+                {location.name}
               </option>
             ))}
           </Select>
-          {errors.clinicId && <p className="text-xs text-destructive">{errors.clinicId.message}</p>}
+          {errors.locationId && <p className="text-xs text-destructive">{errors.locationId.message}</p>}
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="doctor-password">Temporary password</Label>

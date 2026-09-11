@@ -13,7 +13,7 @@ import { DoctorPicker } from "@/components/booking/doctor-picker";
 import { ServicePicker } from "@/components/booking/service-picker";
 import { CalendarPicker } from "@/components/booking/calendar-picker";
 import { SlotGrid } from "@/components/booking/slot-grid";
-import { useClinics, useDoctors, useServices, useSlots } from "@/hooks/use-slots";
+import { useLocations, useDoctors, useServices, useSlots } from "@/hooks/use-slots";
 import { useCreateAppointment } from "@/hooks/use-appointments";
 import { useJoinWaitlist, useMyWaitlist } from "@/hooks/use-waitlist";
 import { useMyRecalls, useDismissRecall } from "@/hooks/use-recalls";
@@ -22,29 +22,29 @@ import { PageLoading } from "@/components/common/loading-spinner";
 import { formatDate, formatDayLabel } from "@/lib/utils";
 
 export default function PatientDashboardPage() {
-  const { data: clinicsData } = useClinics();
+  const { data: locationsData } = useLocations();
   const { data: recallsData } = useMyRecalls();
   const dismissRecall = useDismissRecall();
 
-  const [clinicId, setClinicId] = useState<string | null>(null);
+  const [locationId, setLocationId] = useState<string | null>(null);
   const [doctorId, setDoctorId] = useState<string | null>(null);
   const [serviceId, setServiceId] = useState<string | null>(null);
   const [date, setDate] = useState<string | null>(null);
   const [time, setTime] = useState<string | null>(null);
   const [reason, setReason] = useState("");
 
-  // A single-clinic clinic never needs the patient to make a choice.
+  // A single-location clinic never needs the patient to make a choice.
   useEffect(() => {
-    if (clinicId === null && clinicsData?.clinics.length === 1) {
-      setClinicId(clinicsData.clinics[0].id);
+    if (locationId === null && locationsData?.locations.length === 1) {
+      setLocationId(locationsData.locations[0].id);
     }
-  }, [clinicId, clinicsData]);
+  }, [locationId, locationsData]);
 
-  const { data: doctorsData, isLoading: doctorsLoading } = useDoctors(clinicId ?? undefined);
+  const { data: doctorsData, isLoading: doctorsLoading } = useDoctors(locationId ?? undefined);
   const { data: servicesData, isLoading: servicesLoading } = useServices(doctorId ?? undefined);
 
-  function handleClinicChange(id: string) {
-    setClinicId(id);
+  function handleLocationChange(id: string) {
+    setLocationId(id);
     setDoctorId(null);
     setServiceId(null);
     setTime(null);
@@ -58,9 +58,9 @@ export default function PatientDashboardPage() {
 
   async function handleBookFromRecall(recallDoctorId: string, recallServiceId: string) {
     // Jump straight to the doctor+service the recall is for, unfiltered by
-    // clinic so the doctor is guaranteed to show up regardless of which
-    // clinic (if any) is currently selected.
-    setClinicId(null);
+    // location so the doctor is guaranteed to show up regardless of which
+    // location (if any) is currently selected.
+    setLocationId(null);
     setDoctorId(recallDoctorId);
     setServiceId(recallServiceId);
     setTime(null);
@@ -113,9 +113,9 @@ export default function PatientDashboardPage() {
   }
 
   const canSubmit = doctorId && serviceId && date && time && !createAppointment.isPending;
-  const showClinicStep = (clinicsData?.clinics.length ?? 0) > 1;
+  const showLocationStep = (locationsData?.locations.length ?? 0) > 1;
   const recalls = recallsData?.recalls ?? [];
-  const step = (n: number) => (showClinicStep ? n : n - 1);
+  const step = (n: number) => (showLocationStep ? n : n - 1);
 
   return (
     <div className="space-y-6">
@@ -157,26 +157,26 @@ export default function PatientDashboardPage() {
         </div>
       )}
 
-      {showClinicStep && (
+      {showLocationStep && (
         <Card>
           <CardHeader>
-            <CardTitle>1. Choose a clinic</CardTitle>
+            <CardTitle>1. Choose a location</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex flex-wrap gap-2">
-              {clinicsData?.clinics.map((clinic) => (
+              {locationsData?.locations.map((location) => (
                 <button
-                  key={clinic.id}
+                  key={location.id}
                   type="button"
-                  onClick={() => handleClinicChange(clinic.id)}
+                  onClick={() => handleLocationChange(location.id)}
                   className={cn(
                     "rounded-lg border px-4 py-2 text-sm font-medium transition-colors",
-                    clinicId === clinic.id
+                    locationId === location.id
                       ? "border-primary bg-primary/5 text-primary ring-1 ring-primary"
                       : "border-border text-foreground hover:border-primary/30 hover:bg-muted",
                   )}
                 >
-                  {clinic.name}
+                  {location.name}
                 </button>
               ))}
             </div>

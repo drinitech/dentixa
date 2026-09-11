@@ -35,7 +35,7 @@ describe("getFreeSlots", () => {
     clinicServiceFindUnique.mockResolvedValue({ id: "svc-1", durationMinutes: 30, isActive: true });
     scheduleExceptionFindUnique.mockResolvedValue(null);
     clinicHolidayFindFirst.mockResolvedValue(null);
-    userFindUnique.mockResolvedValue({ clinicId: "clinic-1" });
+    userFindUnique.mockResolvedValue({ locationId: "location-1" });
   });
 
   it("returns every slot in the schedule window when nothing is booked", async () => {

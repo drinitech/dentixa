@@ -26,7 +26,7 @@ export interface ClinicService {
   recallIntervalMonths?: number | null;
 }
 
-export interface Clinic {
+export interface Location {
   id: string;
   name: string;
   address: string | null;
@@ -40,8 +40,8 @@ export interface DoctorSummary {
   email: string;
   avatarUrl: string | null;
   specialty: string | null;
-  clinicId?: string | null;
-  clinic?: { id: string; name: string } | null;
+  locationId?: string | null;
+  location?: { id: string; name: string } | null;
   averageRating?: number | null;
   reviewCount?: number;
 }
@@ -122,8 +122,8 @@ export interface AdminUser {
   specialty: string | null;
   isActive: boolean;
   createdAt: string;
-  clinicId?: string | null;
-  clinic?: { id: string; name: string } | null;
+  locationId?: string | null;
+  location?: { id: string; name: string } | null;
 }
 
 export type RecallStatus = "PENDING" | "NOTIFIED" | "BOOKED" | "DISMISSED";

@@ -4,7 +4,7 @@ import * as adminService from "../services/admin.service";
 import * as appointmentService from "../services/appointment.service";
 import * as clinicServiceService from "../services/clinicService.service";
 import * as clinicHolidayService from "../services/clinicHoliday.service";
-import * as clinicService from "../services/clinic.service";
+import * as locationService from "../services/location.service";
 import * as statsService from "../services/stats.service";
 import { notifyWaitlistIfSlotsOpened } from "../services/waitlist.service";
 import { buildAppointmentsWorkbook } from "../lib/excel";
@@ -113,8 +113,8 @@ export const adminStatsHandler = asyncHandler(async (_req: Request, res: Respons
 });
 
 export const listClinicHolidaysHandler = asyncHandler(async (req: Request, res: Response) => {
-  const { clinicId } = req.query as { clinicId?: string };
-  const holidays = await clinicHolidayService.listClinicHolidays(clinicId);
+  const { locationId } = req.query as { locationId?: string };
+  const holidays = await clinicHolidayService.listClinicHolidays(locationId);
   res.json({ holidays });
 });
 
@@ -128,17 +128,17 @@ export const deleteClinicHolidayHandler = asyncHandler(async (req: Request, res:
   res.status(204).send();
 });
 
-export const listAllClinicsHandler = asyncHandler(async (_req: Request, res: Response) => {
-  const clinics = await clinicService.listAllClinics();
-  res.json({ clinics });
+export const listAllLocationsHandler = asyncHandler(async (_req: Request, res: Response) => {
+  const locations = await locationService.listAllLocations();
+  res.json({ locations });
 });
 
-export const createClinicHandler = asyncHandler(async (req: Request, res: Response) => {
-  const clinic = await clinicService.createClinic(req.body);
-  res.status(201).json({ clinic });
+export const createLocationHandler = asyncHandler(async (req: Request, res: Response) => {
+  const location = await locationService.createLocation(req.body);
+  res.status(201).json({ location });
 });
 
-export const updateClinicHandler = asyncHandler(async (req: Request, res: Response) => {
-  const clinic = await clinicService.updateClinic(req.params.id, req.body);
-  res.json({ clinic });
+export const updateLocationHandler = asyncHandler(async (req: Request, res: Response) => {
+  const location = await locationService.updateLocation(req.params.id, req.body);
+  res.json({ location });
 });

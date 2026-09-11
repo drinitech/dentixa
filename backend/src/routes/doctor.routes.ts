@@ -10,15 +10,15 @@ import { listDoctorReviews } from "../services/review.service";
 
 export const doctorRouter = Router();
 
-const listDoctorsQuerySchema = z.object({ clinicId: z.string().min(1).optional() });
+const listDoctorsQuerySchema = z.object({ locationId: z.string().min(1).optional() });
 
 doctorRouter.get(
   "/",
   authenticate,
   validate(listDoctorsQuerySchema, "query"),
   asyncHandler(async (req, res) => {
-    const { clinicId } = req.query as { clinicId?: string };
-    const doctors = await listActiveDoctors(clinicId);
+    const { locationId } = req.query as { locationId?: string };
+    const doctors = await listActiveDoctors(locationId);
     res.json({ doctors });
   }),
 );

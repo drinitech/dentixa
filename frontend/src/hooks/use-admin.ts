@@ -2,7 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiFetch } from "@/lib/api-client";
-import type { AdminUser, Clinic, ClinicService, ClinicHoliday, Role } from "@/types";
+import type { AdminUser, Location, ClinicService, ClinicHoliday, Role } from "@/types";
 
 // --- Doctors ---
 
@@ -22,7 +22,7 @@ export function useCreateDoctor() {
       password: string;
       phone?: string;
       specialty?: string;
-      clinicId: string;
+      locationId: string;
     }) => apiFetch<{ doctor: AdminUser }>("/admin/doctors", { method: "POST", body: input }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-doctors"] });
@@ -44,7 +44,7 @@ export function useUpdateDoctor() {
       phone?: string;
       specialty?: string;
       isActive?: boolean;
-      clinicId?: string;
+      locationId?: string;
     }) => apiFetch<{ doctor: AdminUser }>(`/admin/doctors/${id}`, { method: "PATCH", body: input }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-doctors"] });
@@ -53,35 +53,35 @@ export function useUpdateDoctor() {
   });
 }
 
-// --- Clinics ---
+// --- Locations ---
 
-export function useAdminClinics() {
+export function useAdminLocations() {
   return useQuery({
-    queryKey: ["admin-clinics"],
-    queryFn: () => apiFetch<{ clinics: Clinic[] }>("/admin/clinics"),
+    queryKey: ["admin-locations"],
+    queryFn: () => apiFetch<{ locations: Location[] }>("/admin/locations"),
   });
 }
 
-export function useCreateClinic() {
+export function useCreateLocation() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (input: { name: string; address?: string; phone?: string }) =>
-      apiFetch<{ clinic: Clinic }>("/admin/clinics", { method: "POST", body: input }),
+      apiFetch<{ location: Location }>("/admin/locations", { method: "POST", body: input }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["admin-clinics"] });
-      queryClient.invalidateQueries({ queryKey: ["clinics"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-locations"] });
+      queryClient.invalidateQueries({ queryKey: ["locations"] });
     },
   });
 }
 
-export function useUpdateClinic() {
+export function useUpdateLocation() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ id, ...input }: { id: string; name?: string; address?: string; phone?: string; isActive?: boolean }) =>
-      apiFetch<{ clinic: Clinic }>(`/admin/clinics/${id}`, { method: "PATCH", body: input }),
+      apiFetch<{ location: Location }>(`/admin/locations/${id}`, { method: "PATCH", body: input }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["admin-clinics"] });
-      queryClient.invalidateQueries({ queryKey: ["clinics"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-locations"] });
+      queryClient.invalidateQueries({ queryKey: ["locations"] });
     },
   });
 }

@@ -49,7 +49,7 @@ export const createDoctorSchema = z.object({
   password: z.string().min(8, "Password must be at least 8 characters"),
   phone: z.string().trim().optional().or(z.literal("")),
   specialty: z.string().trim().optional().or(z.literal("")),
-  clinicId: z.string().min(1, "Choose a clinic"),
+  locationId: z.string().min(1, "Choose a location"),
 });
 export type CreateDoctorFormInput = z.infer<typeof createDoctorSchema>;
 
@@ -58,13 +58,13 @@ export const editDoctorSchema = z.object({
   email: z.string().trim().email("Invalid email address"),
   phone: z.string().trim().optional().or(z.literal("")),
   specialty: z.string().trim().optional().or(z.literal("")),
-  clinicId: z.string().min(1, "Choose a clinic"),
+  locationId: z.string().min(1, "Choose a location"),
 });
 export type EditDoctorFormInput = z.infer<typeof editDoctorSchema>;
 
-export const clinicSchema = z.object({
+export const locationSchema = z.object({
   name: z.string().trim().min(2, "Name is required"),
   address: z.string().trim().optional().or(z.literal("")),
   phone: z.string().trim().optional().or(z.literal("")),
 });
-export type ClinicFormInput = z.infer<typeof clinicSchema>;
+export type LocationFormInput = z.infer<typeof locationSchema>;
