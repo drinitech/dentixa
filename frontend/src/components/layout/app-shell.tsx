@@ -2,13 +2,13 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useParams } from "next/navigation";
 import { LogOut, Menu, X, type LucideIcon } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { Avatar } from "@/components/common/avatar";
-import { ROLE_HOME, ROLE_PROFILE } from "./nav-items";
+import { roleHome, roleProfile } from "./nav-items";
 
 export interface NavItem {
   label: string;
@@ -28,9 +28,10 @@ export function AppShell({
   const { user, logout } = useAuth();
   const pathname = usePathname();
   const router = useRouter();
+  const { slug } = useParams<{ slug: string }>();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const homeHref = user ? ROLE_HOME[user.role] : "/login";
-  const profileHref = user ? ROLE_PROFILE[user.role] : "/login";
+  const homeHref = user ? roleHome(slug, user.role) : "/login";
+  const profileHref = user ? roleProfile(slug, user.role) : "/login";
 
   async function handleLogout() {
     await logout();

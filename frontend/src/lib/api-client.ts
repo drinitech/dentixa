@@ -27,6 +27,18 @@ export function setRefreshHandler(fn: () => Promise<string | null>) {
   refreshFn = fn;
 }
 
+// Set by TenantProvider (see components/providers/tenant-provider.tsx) from
+// the current /c/[slug] route param. Null on pages outside that segment
+// (the marketing page, /login, /register) — those never call tenant-scoped
+// endpoints, so no header is sent.
+let tenantSlug: string | null = null;
+export function setTenantSlug(slug: string | null) {
+  tenantSlug = slug;
+}
+export function getTenantSlug() {
+  return tenantSlug;
+}
+
 interface RequestOptions extends Omit<RequestInit, "body"> {
   body?: unknown;
   skipAuthRetry?: boolean;
@@ -43,6 +55,7 @@ async function rawRequest(path: string, options: RequestOptions = {}) {
     headers: {
       "Content-Type": "application/json",
       ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+      ...(tenantSlug ? { "X-Tenant-Slug": tenantSlug } : {}),
       ...headers,
     },
     body: body !== undefined ? JSON.stringify(body) : undefined,

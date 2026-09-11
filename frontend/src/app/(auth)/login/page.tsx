@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth-context";
 import { loginSchema, type LoginInput } from "@/lib/validations";
 import { ApiError } from "@/lib/api-client";
-import { ROLE_HOME } from "@/components/layout/nav-items";
+import { roleHome } from "@/components/layout/nav-items";
 
 export default function LoginPage() {
   const { login } = useAuth();
@@ -29,9 +29,13 @@ export default function LoginPage() {
   async function onSubmit(data: LoginInput) {
     setSubmitting(true);
     try {
-      const user = await login(data.email, data.password);
+      const { user, tenantSlug } = await login(data.email, data.password);
+      if (!tenantSlug) {
+        toast.error("Your account isn't linked to a clinic yet. Contact support.");
+        return;
+      }
       toast.success(`Welcome back, ${user.name.split(" ")[0]}`);
-      router.push(ROLE_HOME[user.role] || "/dashboard");
+      router.push(roleHome(tenantSlug, user.role));
     } catch (err) {
       toast.error(err instanceof ApiError ? err.message : "Login failed");
     } finally {

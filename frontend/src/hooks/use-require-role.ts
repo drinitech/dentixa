@@ -1,14 +1,15 @@
 "use client";
 
 import { useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
-import { ROLE_HOME } from "@/components/layout/nav-items";
+import { roleHome } from "@/components/layout/nav-items";
 import type { Role } from "@/types";
 
 export function useRequireRole(role: Role) {
   const { user, loading } = useAuth();
   const router = useRouter();
+  const { slug } = useParams<{ slug: string }>();
 
   useEffect(() => {
     if (loading) return;
@@ -17,9 +18,9 @@ export function useRequireRole(role: Role) {
       return;
     }
     if (user.role !== role) {
-      router.replace(ROLE_HOME[user.role]);
+      router.replace(roleHome(slug, user.role));
     }
-  }, [user, loading, role, router]);
+  }, [user, loading, role, router, slug]);
 
   return { user, loading, ready: !loading && !!user && user.role === role };
 }

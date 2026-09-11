@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth-context";
 import { registerSchema, type RegisterInput } from "@/lib/validations";
 import { ApiError } from "@/lib/api-client";
+import { roleHome } from "@/components/layout/nav-items";
 
 export default function RegisterPage() {
   const { register: registerUser } = useAuth();
@@ -28,9 +29,13 @@ export default function RegisterPage() {
   async function onSubmit(data: RegisterInput) {
     setSubmitting(true);
     try {
-      await registerUser({ ...data, phone: data.phone || undefined });
+      const { user, tenantSlug } = await registerUser({ ...data, phone: data.phone || undefined });
+      if (!tenantSlug) {
+        toast.error("Your account isn't linked to a clinic yet. Contact support.");
+        return;
+      }
       toast.success("Account created");
-      router.push("/dashboard");
+      router.push(roleHome(tenantSlug, user.role));
     } catch (err) {
       toast.error(err instanceof ApiError ? err.message : "Registration failed");
     } finally {

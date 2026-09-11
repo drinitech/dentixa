@@ -6,14 +6,23 @@ import type { User } from "@/types";
 
 interface AuthResponse {
   user: User;
+  // The clinic to land the user in after login/register — there's no
+  // multi-clinic picker UI yet, so this is always their one Membership's
+  // tenant. Null only if a user somehow has none, which shouldn't happen.
+  tenantSlug: string | null;
   accessToken: string;
 }
 
 interface AuthContextValue {
   user: User | null;
   loading: boolean;
-  login: (email: string, password: string) => Promise<User>;
-  register: (input: { name: string; email: string; password: string; phone?: string }) => Promise<User>;
+  login: (email: string, password: string) => Promise<{ user: User; tenantSlug: string | null }>;
+  register: (input: {
+    name: string;
+    email: string;
+    password: string;
+    phone?: string;
+  }) => Promise<{ user: User; tenantSlug: string | null }>;
   logout: () => Promise<void>;
   patchUser: (patch: Partial<User>) => void;
   changePassword: (currentPassword: string, newPassword: string) => Promise<User>;
@@ -54,7 +63,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
     setAccessToken(data.accessToken);
     setUser(data.user);
-    return data.user;
+    return { user: data.user, tenantSlug: data.tenantSlug };
   }, []);
 
   const register = useCallback(
@@ -66,7 +75,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
       setAccessToken(data.accessToken);
       setUser(data.user);
-      return data.user;
+      return { user: data.user, tenantSlug: data.tenantSlug };
     },
     [],
   );
