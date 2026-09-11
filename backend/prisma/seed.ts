@@ -16,11 +16,28 @@ async function seedNotificationPreferences(userId: string) {
   });
 }
 
+async function upsertMembership(userId: string, tenantId: string, role: "OWNER" | "DOCTOR" | "PATIENT") {
+  await prisma.membership.upsert({
+    where: { userId_tenantId: { userId, tenantId } },
+    update: { role },
+    create: { userId, tenantId, role },
+  });
+}
+
 async function main() {
   const mainLocation = await prisma.location.upsert({
     where: { id: "default-clinic" },
     update: {},
     create: { id: "default-clinic", name: "Klinika Kryesore" },
+  });
+
+  // Demo tenant every seeded account belongs to. Real production data gets
+  // backfilled into the same kind of tenant by a later migration; here it's
+  // created directly since seed data is disposable/idempotent.
+  const demoTenant = await prisma.tenant.upsert({
+    where: { slug: "demo-clinic" },
+    update: {},
+    create: { id: "demo-clinic", name: "Dentixa Demo Clinic", slug: "demo-clinic", timezone: "Europe/Belgrade" },
   });
 
   const adminPasswordHash = await bcrypt.hash("admin123", SALT_ROUNDS);
@@ -30,6 +47,7 @@ async function main() {
     create: { name: "Clinic Admin", email: "admin@dentixa.com", passwordHash: adminPasswordHash, role: "ADMIN" },
   });
   await seedNotificationPreferences(admin.id);
+  await upsertMembership(admin.id, demoTenant.id, "OWNER");
 
   const doctorPasswordHash = await bcrypt.hash("doctor123", SALT_ROUNDS);
   const doctors = await Promise.all(
@@ -50,7 +68,10 @@ async function main() {
       }),
     ),
   );
-  for (const doctor of doctors) await seedNotificationPreferences(doctor.id);
+  for (const doctor of doctors) {
+    await seedNotificationPreferences(doctor.id);
+    await upsertMembership(doctor.id, demoTenant.id, "DOCTOR");
+  }
 
   for (const doctor of doctors) {
     await prisma.doctorSchedule.deleteMany({ where: { doctorId: doctor.id } });
@@ -78,6 +99,7 @@ async function main() {
     },
   });
   await seedNotificationPreferences(patient.id);
+  await upsertMembership(patient.id, demoTenant.id, "PATIENT");
 
   const services = [
     { name: "Checkup", durationMinutes: 30, price: 20 },

@@ -45,6 +45,64 @@ enum RecallStatus {
   DISMISSED
 }
 
+enum TenantPlan {
+  FREE
+  PRO
+}
+
+enum TenantStatus {
+  ACTIVE
+  SUSPENDED
+}
+
+enum MembershipRole {
+  OWNER
+  RECEPTIONIST
+  DOCTOR
+  PATIENT
+}
+
+enum MembershipStatus {
+  ACTIVE
+  DISABLED
+}
+
+// A SaaS customer (a dental practice/business) — distinct from Location,
+// which is a physical address a practice's doctors work out of. Not yet
+// referenced by any tenant-scoped table; that lands once every such table
+// gets a tenantId column and is backfilled into a demo tenant.
+model Tenant {
+  id        String       @id @default(cuid())
+  name      String
+  slug      String       @unique
+  timezone  String       @default("UTC")
+  plan      TenantPlan   @default(FREE)
+  status    TenantStatus @default(ACTIVE)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  memberships Membership[]
+}
+
+// A user's role within one tenant. A User is global (one account can work
+// across multiple clinics); role is read from here, never from User.role —
+// User.role is legacy and still what auth actually checks until tenant
+// resolution (Milestone 2) replaces it.
+model Membership {
+  id        String           @id @default(cuid())
+  userId    String
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tenantId  String
+  tenant    Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  role      MembershipRole
+  status    MembershipStatus @default(ACTIVE)
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  @@unique([userId, tenantId])
+  @@index([tenantId, role])
+}
+
 model User {
   id           String   @id @default(cuid())
   name         String
@@ -87,6 +145,7 @@ model User {
   offeredServices         ClinicService[]           @relation("DoctorServices")
   waitlistAsPatient       Waitlist[]                @relation("PatientWaitlist")
   waitlistAsDoctor        Waitlist[]                @relation("DoctorWaitlist")
+  memberships             Membership[]
   recallsAsPatient        RecallReminder[]          @relation("PatientRecalls")
   recallsAsDoctor         RecallReminder[]          @relation("DoctorRecalls")
 
