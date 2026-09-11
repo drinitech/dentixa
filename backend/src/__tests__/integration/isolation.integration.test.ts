@@ -225,6 +225,11 @@ describe("cross-tenant isolation", () => {
     expect(res.status).toBe(404);
   });
 
+  it("a request to a tenant-scoped endpoint with no X-Tenant-Slug header at all gets 404, not a fallback tenant", async () => {
+    const res = await request(app).get("/api/admin/doctors").set("Authorization", `Bearer ${b.owner.token}`);
+    expect(res.status).toBe(404);
+  });
+
   describe("listing endpoints don't leak the other tenant's rows", () => {
     it("GET /doctors as tenant B never includes tenant A's doctor", async () => {
       const res = await request(app)

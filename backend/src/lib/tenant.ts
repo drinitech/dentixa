@@ -1,8 +1,6 @@
 // The tenant every pre-existing row was backfilled into (Milestone 1), and
-// the fallback middleware/resolveTenant.ts uses when a request doesn't send
-// an X-Tenant-Slug header — i.e. every request from the current frontend,
-// which doesn't do path-based tenant routing yet. Once the frontend sends
-// the header on every request (Milestone 2's frontend step), this fallback
-// stops being exercised in practice; it's not removed outright since it's
-// what keeps the live single-clinic app working during the transition.
+// the one public registration assigns new patients to — there's no
+// multi-clinic picker at signup yet (see auth.service.ts register()).
+// resolveTenant.ts no longer falls back to this: every tenant-scoped route
+// requires a real X-Tenant-Slug header, which the frontend now always sends.
 export const DEFAULT_TENANT_ID = process.env.DEFAULT_TENANT_ID || "demo-clinic";
