@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { authenticate } from "../middleware/authenticate";
+import { resolveTenant } from "../middleware/resolveTenant";
 import { authorize } from "../middleware/authorize";
 import { validate } from "../middleware/validate";
 import { replaceScheduleSchema, slotsQuerySchema, createExceptionSchema } from "../validations/schedule.schema";
@@ -14,7 +15,7 @@ import {
 
 export const scheduleRouter = Router();
 
-scheduleRouter.use(authenticate);
+scheduleRouter.use(authenticate, resolveTenant);
 
 scheduleRouter.get("/", authorize("DOCTOR"), getMyScheduleHandler);
 scheduleRouter.put("/", authorize("DOCTOR"), validate(replaceScheduleSchema), replaceMyScheduleHandler);

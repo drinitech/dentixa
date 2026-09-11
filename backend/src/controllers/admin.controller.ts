@@ -10,58 +10,58 @@ import { notifyWaitlistIfSlotsOpened } from "../services/waitlist.service";
 import { buildAppointmentsWorkbook } from "../lib/excel";
 
 export const createDoctorHandler = asyncHandler(async (req: Request, res: Response) => {
-  const doctor = await adminService.createDoctor(req.body);
+  const doctor = await adminService.createDoctor(req.tenantId!, req.body);
   res.status(201).json({ doctor });
 });
 
-export const listDoctorsHandler = asyncHandler(async (_req: Request, res: Response) => {
-  const doctors = await adminService.listDoctors();
+export const listDoctorsHandler = asyncHandler(async (req: Request, res: Response) => {
+  const doctors = await adminService.listDoctors(req.tenantId!);
   res.json({ doctors });
 });
 
 export const updateDoctorHandler = asyncHandler(async (req: Request, res: Response) => {
-  const doctor = await adminService.updateDoctor(req.params.id, req.body);
+  const doctor = await adminService.updateDoctor(req.tenantId!, req.params.id, req.body);
   res.json({ doctor });
 });
 
 export const getDoctorServicesHandler = asyncHandler(async (req: Request, res: Response) => {
-  const serviceIds = await adminService.getDoctorServices(req.params.id);
+  const serviceIds = await adminService.getDoctorServices(req.tenantId!, req.params.id);
   res.json({ serviceIds });
 });
 
 export const setDoctorServicesHandler = asyncHandler(async (req: Request, res: Response) => {
-  const serviceIds = await adminService.setDoctorServices(req.params.id, req.body.serviceIds);
+  const serviceIds = await adminService.setDoctorServices(req.tenantId!, req.params.id, req.body.serviceIds);
   res.json({ serviceIds });
 });
 
 export const listUsersHandler = asyncHandler(async (req: Request, res: Response) => {
-  const result = await adminService.listUsers(req.query as any);
+  const result = await adminService.listUsers(req.tenantId!, req.query as any);
   res.json(result);
 });
 
 export const banUserHandler = asyncHandler(async (req: Request, res: Response) => {
-  const user = await adminService.setUserActive(req.params.id, false);
+  const user = await adminService.setUserActive(req.tenantId!, req.params.id, false);
   res.json({ user });
 });
 
 export const unbanUserHandler = asyncHandler(async (req: Request, res: Response) => {
-  const user = await adminService.setUserActive(req.params.id, true);
+  const user = await adminService.setUserActive(req.tenantId!, req.params.id, true);
   res.json({ user });
 });
 
 export const resetPasswordHandler = asyncHandler(async (req: Request, res: Response) => {
-  const result = await adminService.resetPassword(req.params.id);
+  const result = await adminService.resetPassword(req.tenantId!, req.params.id);
   res.json(result);
 });
 
 export const deleteUserHandler = asyncHandler(async (req: Request, res: Response) => {
-  await adminService.deleteUser(req.params.id);
+  await adminService.deleteUser(req.tenantId!, req.params.id);
   res.status(204).send();
 });
 
 export const globalAppointmentsHandler = asyncHandler(async (req: Request, res: Response) => {
   const result = await appointmentService.listAppointments(
-    { role: "ADMIN", userId: req.user!.id },
+    { role: "OWNER", userId: req.user!.id },
     req.query as any,
   );
   res.json(result);
@@ -69,7 +69,7 @@ export const globalAppointmentsHandler = asyncHandler(async (req: Request, res: 
 
 export const globalExportAppointmentsHandler = asyncHandler(async (req: Request, res: Response) => {
   const appointments = await appointmentService.exportAppointments(
-    { role: "ADMIN", userId: req.user!.id },
+    { role: "OWNER", userId: req.user!.id },
     req.query as any,
   );
   const buffer = await buildAppointmentsWorkbook(appointments);
@@ -81,7 +81,7 @@ export const globalExportAppointmentsHandler = asyncHandler(async (req: Request,
 export const overrideCancelAppointmentHandler = asyncHandler(async (req: Request, res: Response) => {
   const appt = await appointmentService.cancelAppointment(req.params.id, {
     id: req.user!.id,
-    role: "ADMIN",
+    role: "OWNER",
   });
   await notifyWaitlistIfSlotsOpened(appt.doctorId, appt.date.toISOString().slice(0, 10));
   res.json({ appointment: appt });
@@ -107,8 +107,8 @@ export const deactivateServiceHandler = asyncHandler(async (req: Request, res: R
   res.json({ service });
 });
 
-export const adminStatsHandler = asyncHandler(async (_req: Request, res: Response) => {
-  const stats = await statsService.getAdminStats();
+export const adminStatsHandler = asyncHandler(async (req: Request, res: Response) => {
+  const stats = await statsService.getAdminStats(req.tenantId!);
   res.json({ stats });
 });
 

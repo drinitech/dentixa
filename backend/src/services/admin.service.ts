@@ -1,7 +1,7 @@
 import crypto from "node:crypto";
 import bcrypt from "bcryptjs";
-import { Prisma } from "@prisma/client";
-import { prisma } from "../lib/prisma";
+import { Prisma, type MembershipRole } from "@prisma/client";
+import { prisma, prismaUnscoped } from "../lib/prisma";
 import { NotFoundError } from "../errors/NotFoundError";
 import { BadRequestError } from "../errors/BadRequestError";
 import { seedDefaultNotificationPreferences } from "./notification.service";
@@ -24,10 +24,28 @@ const PUBLIC_USER_SELECT = {
   location: { select: { id: true, name: true } },
 } satisfies Prisma.UserSelect;
 
-export async function createDoctor(input: CreateDoctorInput) {
+// Membership isn't tenant-scoped by the Prisma extension (it's how tenant
+// context gets established in the first place), so every lookup here filters
+// by tenantId explicitly. Throws NotFoundError (never Forbidden) for a user
+// who exists globally but isn't a member of this tenant — an owner in
+// tenant A must get the same 404 for tenant B's user whether that user
+// exists at all or not.
+async function requireMembership(tenantId: string, userId: string, role?: MembershipRole) {
+  const membership = await prismaUnscoped.membership.findUnique({
+    where: { userId_tenantId: { userId, tenantId } },
+  });
+  if (!membership || membership.status !== "ACTIVE" || (role && membership.role !== role)) {
+    throw new NotFoundError("User not found");
+  }
+  return membership;
+}
+
+export async function createDoctor(tenantId: string, input: CreateDoctorInput) {
   const existing = await prisma.user.findUnique({ where: { email: input.email } });
   if (existing) throw new BadRequestError("An account with this email already exists");
 
+  // Tenant-scoped by the extension — resolves to null if input.locationId
+  // belongs to a different tenant, same as "doesn't exist".
   const location = await prisma.location.findUnique({ where: { id: input.locationId } });
   if (!location) throw new BadRequestError("Selected location does not exist");
 
@@ -45,20 +63,20 @@ export async function createDoctor(input: CreateDoctorInput) {
     select: PUBLIC_USER_SELECT,
   });
   await seedDefaultNotificationPreferences(doctor.id);
+  await prismaUnscoped.membership.create({ data: { userId: doctor.id, tenantId, role: "DOCTOR" } });
   return doctor;
 }
 
-export async function listDoctors() {
+export async function listDoctors(tenantId: string) {
   return prisma.user.findMany({
-    where: { role: "DOCTOR" },
+    where: { memberships: { some: { tenantId, role: "DOCTOR" } } },
     orderBy: { name: "asc" },
     select: PUBLIC_USER_SELECT,
   });
 }
 
-export async function updateDoctor(id: string, input: UpdateDoctorInput) {
-  const doctor = await prisma.user.findUnique({ where: { id } });
-  if (!doctor || doctor.role !== "DOCTOR") throw new NotFoundError("Doctor not found");
+export async function updateDoctor(tenantId: string, id: string, input: UpdateDoctorInput) {
+  await requireMembership(tenantId, id, "DOCTOR");
 
   if (input.email) {
     const existing = await prisma.user.findUnique({ where: { email: input.email } });
@@ -83,20 +101,19 @@ export async function updateDoctor(id: string, input: UpdateDoctorInput) {
   });
 }
 
-export async function getDoctorServices(doctorId: string) {
+export async function getDoctorServices(tenantId: string, doctorId: string) {
+  await requireMembership(tenantId, doctorId, "DOCTOR");
   const doctor = await prisma.user.findUnique({
     where: { id: doctorId },
     include: { offeredServices: { select: { id: true } } },
   });
-  if (!doctor || doctor.role !== "DOCTOR") throw new NotFoundError("Doctor not found");
-  return doctor.offeredServices.map((s) => s.id);
+  return doctor!.offeredServices.map((s) => s.id);
 }
 
 // Replace-all semantics, same pattern as replaceSchedule — empty array means
 // "no restriction" (bookable for every active service), not "offers nothing".
-export async function setDoctorServices(doctorId: string, serviceIds: string[]) {
-  const doctor = await prisma.user.findUnique({ where: { id: doctorId } });
-  if (!doctor || doctor.role !== "DOCTOR") throw new NotFoundError("Doctor not found");
+export async function setDoctorServices(tenantId: string, doctorId: string, serviceIds: string[]) {
+  await requireMembership(tenantId, doctorId, "DOCTOR");
 
   await prisma.user.update({
     where: { id: doctorId },
@@ -105,9 +122,16 @@ export async function setDoctorServices(doctorId: string, serviceIds: string[]) 
   return serviceIds;
 }
 
-export async function listUsers(query: ListUsersQuery) {
-  const where: Prisma.UserWhereInput = {};
-  if (query.role) where.role = query.role;
+// Legacy Role (PATIENT/DOCTOR/ADMIN) is what the query param and frontend
+// still use; Membership uses OWNER instead of ADMIN.
+function toMembershipRole(role: "PATIENT" | "DOCTOR" | "ADMIN"): MembershipRole {
+  return role === "ADMIN" ? "OWNER" : role;
+}
+
+export async function listUsers(tenantId: string, query: ListUsersQuery) {
+  const where: Prisma.UserWhereInput = {
+    memberships: { some: { tenantId, ...(query.role ? { role: toMembershipRole(query.role) } : {}) } },
+  };
   if (query.status) where.isActive = query.status === "active";
   if (query.search) {
     where.OR = [
@@ -130,10 +154,9 @@ export async function listUsers(query: ListUsersQuery) {
   return { users, total, page: query.page, pageSize: query.pageSize };
 }
 
-export async function setUserActive(id: string, isActive: boolean) {
-  const user = await prisma.user.findUnique({ where: { id } });
-  if (!user) throw new NotFoundError("User not found");
-  if (user.role === "ADMIN") throw new BadRequestError("Cannot ban an admin account");
+export async function setUserActive(tenantId: string, id: string, isActive: boolean) {
+  const membership = await requireMembership(tenantId, id);
+  if (membership.role === "OWNER") throw new BadRequestError("Cannot ban an owner account");
 
   return prisma.user.update({
     where: { id },
@@ -145,19 +168,24 @@ export async function setUserActive(id: string, isActive: boolean) {
 // Permanently removes the user. Cascades (schema-level onDelete: Cascade) to
 // their appointments (as patient or doctor), doctor schedule, and notification
 // preferences — irreversible, so the frontend must confirm before calling this.
-export async function deleteUser(id: string) {
-  const user = await prisma.user.findUnique({ where: { id } });
-  if (!user) throw new NotFoundError("User not found");
-  if (user.role === "ADMIN") throw new BadRequestError("Cannot delete an admin account");
+//
+// Known limitation: User is global, so a person who is also a member of
+// another tenant loses that membership and history too, not just this
+// tenant's. Deleting only this tenant's Membership (leaving the User intact)
+// would be the safer behavior once cross-tenant shared accounts are common;
+// today, with a single real tenant, this matches the pre-multi-tenant
+// behavior exactly.
+export async function deleteUser(tenantId: string, id: string) {
+  const membership = await requireMembership(tenantId, id);
+  if (membership.role === "OWNER") throw new BadRequestError("Cannot delete an owner account");
 
   await prisma.user.delete({ where: { id } });
 }
 
 // Admin-set temporary password, returned once in the response for the admin
 // to relay to the user (no email reset-link flow in this phase).
-export async function resetPassword(id: string) {
-  const user = await prisma.user.findUnique({ where: { id } });
-  if (!user) throw new NotFoundError("User not found");
+export async function resetPassword(tenantId: string, id: string) {
+  await requireMembership(tenantId, id);
 
   const tempPassword = crypto.randomBytes(9).toString("base64url");
   const passwordHash = await bcrypt.hash(tempPassword, SALT_ROUNDS);

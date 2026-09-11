@@ -1,4 +1,5 @@
 import { prisma } from "../lib/prisma";
+import { getTenantId } from "../lib/tenantContext";
 
 function startOfWeek(): Date {
   const now = new Date();
@@ -23,22 +24,28 @@ export async function getDoctorStats(doctorId: string) {
   return { appointmentsThisWeek, rejectionsCount, pendingCount, doneCount, noShowCount };
 }
 
-export async function getAdminStats() {
+export async function getAdminStats(tenantId: string) {
   const [totalAppointments, byStatusRaw, perDoctorRaw, monthlyTrendRaw] = await Promise.all([
     prisma.appointment.count(),
     prisma.appointment.groupBy({ by: ["status"], _count: { _all: true } }),
     prisma.appointment.groupBy({ by: ["doctorId", "status"], _count: { _all: true } }),
+    // Raw query bypasses the Prisma extension's automatic tenantId
+    // injection, so it's filtered explicitly here — getTenantId() reads the
+    // same AsyncLocalStorage context resolveTenant established, so this is
+    // guaranteed to match the tenantId param passed in.
     prisma.$queryRaw<{ month: string; count: bigint }[]>`
       SELECT to_char(date_trunc('month', "date"), 'YYYY-MM') AS month, COUNT(*)::bigint AS count
       FROM "Appointment"
+      WHERE "tenantId" = ${getTenantId()}
       GROUP BY 1
       ORDER BY 1 DESC
       LIMIT 12
     `,
   ]);
 
+  // User isn't tenant-scoped by the extension, so this filters via Membership explicitly.
   const doctors = await prisma.user.findMany({
-    where: { role: "DOCTOR" },
+    where: { memberships: { some: { tenantId, role: "DOCTOR" } } },
     select: { id: true, name: true },
   });
 

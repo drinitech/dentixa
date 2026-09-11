@@ -1,6 +1,7 @@
 import crypto from "node:crypto";
 import bcrypt from "bcryptjs";
-import { prisma } from "../lib/prisma";
+import { prismaUnscoped as prisma } from "../lib/prisma";
+import { DEFAULT_TENANT_ID } from "../lib/tenant";
 import { signAccessToken, signRefreshToken, verifyRefreshToken } from "../lib/jwt";
 import { BadRequestError } from "../errors/BadRequestError";
 import { UnauthorizedError } from "../errors/UnauthorizedError";
@@ -46,6 +47,11 @@ export async function register(input: RegisterInput) {
   });
 
   await seedDefaultNotificationPreferences(user.id);
+  // Public registration doesn't ask which clinic yet (that's Milestone 2's
+  // frontend step / Milestone 3's onboarding) — every self-registered
+  // patient becomes a member of the demo tenant, matching today's
+  // single-clinic behavior exactly.
+  await prisma.membership.create({ data: { userId: user.id, tenantId: DEFAULT_TENANT_ID, role: "PATIENT" } });
 
   const tokens = issueTokens(user);
   return { user, ...tokens };

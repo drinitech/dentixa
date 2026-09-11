@@ -1,8 +1,8 @@
-// Milestone-1 stopgap. There is exactly one tenant right now — the demo
-// tenant every existing row was backfilled into — and no request-scoped
-// tenant resolution exists yet (that's Milestone 2: path-based /c/[slug] +
-// a Prisma Client Extension that injects tenantId and rejects any
-// tenant-scoped query made without it). Every write that needs a tenantId
-// uses this constant until then. Safe today because only one tenant exists,
-// so every write already belongs to it.
+// The tenant every pre-existing row was backfilled into (Milestone 1), and
+// the fallback middleware/resolveTenant.ts uses when a request doesn't send
+// an X-Tenant-Slug header — i.e. every request from the current frontend,
+// which doesn't do path-based tenant routing yet. Once the frontend sends
+// the header on every request (Milestone 2's frontend step), this fallback
+// stops being exercised in practice; it's not removed outright since it's
+// what keeps the live single-clinic app working during the transition.
 export const DEFAULT_TENANT_ID = process.env.DEFAULT_TENANT_ID || "demo-clinic";

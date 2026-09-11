@@ -28,6 +28,15 @@ vi.mock("../../lib/prisma", () => ({
 }));
 
 import { getFreeSlots } from "../slot.service";
+import { runWithTenant } from "../../lib/tenantContext";
+
+// getFreeSlots reads the current tenant via AsyncLocalStorage (see
+// tenantContext.ts) — a real request has this established by the
+// resolveTenant middleware before any service code runs, so tests need the
+// same wrapping.
+function callGetFreeSlots(doctorId: string, date: string, serviceId: string) {
+  return runWithTenant("test-tenant", () => getFreeSlots(doctorId, date, serviceId));
+}
 
 describe("getFreeSlots", () => {
   beforeEach(() => {
@@ -43,7 +52,7 @@ describe("getFreeSlots", () => {
     appointmentFindMany.mockResolvedValue([]);
 
     // Use a far-future date so the "exclude past times if today" branch never trims results.
-    const slots = await getFreeSlots("doc-1", "2099-01-02", "svc-1");
+    const slots = await callGetFreeSlots("doc-1", "2099-01-02", "svc-1");
     expect(slots).toEqual(["09:00", "09:30"]);
   });
 
@@ -51,7 +60,7 @@ describe("getFreeSlots", () => {
     doctorScheduleFindMany.mockResolvedValue([{ startTime: "09:00", endTime: "10:00" }]);
     appointmentFindMany.mockResolvedValue([{ time: "09:00", durationMinutes: 30 }]);
 
-    const slots = await getFreeSlots("doc-1", "2099-01-02", "svc-1");
+    const slots = await callGetFreeSlots("doc-1", "2099-01-02", "svc-1");
     expect(slots).toEqual(["09:30"]);
   });
 
@@ -59,7 +68,7 @@ describe("getFreeSlots", () => {
     doctorScheduleFindMany.mockResolvedValue([]);
     appointmentFindMany.mockResolvedValue([]);
 
-    const slots = await getFreeSlots("doc-1", "2099-01-02", "svc-1");
+    const slots = await callGetFreeSlots("doc-1", "2099-01-02", "svc-1");
     expect(slots).toEqual([]);
   });
 
@@ -70,7 +79,7 @@ describe("getFreeSlots", () => {
     ]);
     appointmentFindMany.mockResolvedValue([]);
 
-    const slots = await getFreeSlots("doc-1", "2099-01-02", "svc-1");
+    const slots = await callGetFreeSlots("doc-1", "2099-01-02", "svc-1");
     expect(slots).toEqual(["09:00", "14:00", "14:30"]);
   });
 
@@ -79,7 +88,7 @@ describe("getFreeSlots", () => {
     doctorScheduleFindMany.mockResolvedValue([{ startTime: "09:00", endTime: "10:00" }]);
     appointmentFindMany.mockResolvedValue([]);
 
-    const slots = await getFreeSlots("doc-1", "2099-01-02", "svc-1");
+    const slots = await callGetFreeSlots("doc-1", "2099-01-02", "svc-1");
     expect(slots).toEqual([]);
     expect(doctorScheduleFindMany).not.toHaveBeenCalled();
   });
@@ -89,7 +98,7 @@ describe("getFreeSlots", () => {
     doctorScheduleFindMany.mockResolvedValue([{ startTime: "09:00", endTime: "10:00" }]);
     appointmentFindMany.mockResolvedValue([]);
 
-    const slots = await getFreeSlots("doc-1", "2099-01-02", "svc-1");
+    const slots = await callGetFreeSlots("doc-1", "2099-01-02", "svc-1");
     expect(slots).toEqual([]);
     expect(doctorScheduleFindMany).not.toHaveBeenCalled();
   });

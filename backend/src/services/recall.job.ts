@@ -1,5 +1,8 @@
 import cron from "node-cron";
-import { prisma } from "../lib/prisma";
+// Runs on a timer, not per-request — there is no tenant context to inject,
+// and this intentionally sweeps every tenant's due recalls at once, so it
+// uses the raw client rather than the tenant-scoped one.
+import { prismaUnscoped as prisma } from "../lib/prisma";
 import { notify } from "./notification.service";
 import { logger } from "../lib/logger";
 import { getClinicNow } from "../lib/time";

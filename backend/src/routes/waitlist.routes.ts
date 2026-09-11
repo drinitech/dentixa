@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { authenticate } from "../middleware/authenticate";
+import { resolveTenant } from "../middleware/resolveTenant";
 import { authorize } from "../middleware/authorize";
 import { validate } from "../middleware/validate";
 import { joinWaitlistSchema } from "../validations/waitlist.schema";
@@ -11,7 +12,7 @@ import {
 
 export const waitlistRouter = Router();
 
-waitlistRouter.use(authenticate, authorize("PATIENT"));
+waitlistRouter.use(authenticate, resolveTenant, authorize("PATIENT"));
 
 waitlistRouter.post("/", validate(joinWaitlistSchema), joinWaitlistHandler);
 waitlistRouter.get("/me", listMyWaitlistHandler);

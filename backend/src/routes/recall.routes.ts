@@ -1,12 +1,13 @@
 import { Router } from "express";
 import { authenticate } from "../middleware/authenticate";
+import { resolveTenant } from "../middleware/resolveTenant";
 import { authorize } from "../middleware/authorize";
 import { asyncHandler } from "../lib/asyncHandler";
 import { listMyRecalls, dismissRecall } from "../services/recall.service";
 
 export const recallRouter = Router();
 
-recallRouter.use(authenticate, authorize("PATIENT"));
+recallRouter.use(authenticate, resolveTenant, authorize("PATIENT"));
 
 recallRouter.get(
   "/me",

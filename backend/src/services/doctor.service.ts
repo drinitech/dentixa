@@ -1,8 +1,12 @@
 import { prisma } from "../lib/prisma";
 
-export async function listActiveDoctors(locationId?: string) {
+export async function listActiveDoctors(tenantId: string, locationId?: string) {
   const doctors = await prisma.user.findMany({
-    where: { role: "DOCTOR", isActive: true, ...(locationId ? { locationId } : {}) },
+    where: {
+      isActive: true,
+      ...(locationId ? { locationId } : {}),
+      memberships: { some: { tenantId, role: "DOCTOR", status: "ACTIVE" } },
+    },
     select: {
       id: true,
       name: true,
@@ -15,6 +19,8 @@ export async function listActiveDoctors(locationId?: string) {
     orderBy: { name: "asc" },
   });
 
+  // Review is tenant-scoped by the Prisma extension, so this already only
+  // aggregates ratings from the current tenant.
   const ratings = await prisma.review.groupBy({
     by: ["doctorId"],
     where: { doctorId: { in: doctors.map((d) => d.id) } },

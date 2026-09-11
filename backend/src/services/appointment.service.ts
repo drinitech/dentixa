@@ -1,6 +1,6 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "../lib/prisma";
-import { DEFAULT_TENANT_ID } from "../lib/tenant";
+import { getTenantId } from "../lib/tenantContext";
 import { NotFoundError } from "../errors/NotFoundError";
 import { BadRequestError } from "../errors/BadRequestError";
 import { ForbiddenError } from "../errors/ForbiddenError";
@@ -66,7 +66,10 @@ export async function createAppointment(patientId: string, input: CreateAppointm
   try {
     const created = await prisma.appointment.create({
       data: {
-        tenantId: DEFAULT_TENANT_ID,
+        // TypeScript can't see the extension's runtime injection, so this is
+        // required at the type level too — the extension still injects it
+        // (redundantly) as a safety net for any call site that forgets.
+        tenantId: getTenantId(),
         patientId,
         doctorId: input.doctorId,
         serviceId: input.serviceId,
@@ -95,7 +98,7 @@ export async function createAppointment(patientId: string, input: CreateAppointm
 }
 
 interface ListScope {
-  role: "PATIENT" | "DOCTOR" | "ADMIN";
+  role: "PATIENT" | "DOCTOR" | "OWNER";
   userId: string;
 }
 
@@ -107,8 +110,10 @@ function buildAppointmentWhere(
 
   if (scope.role === "PATIENT") where.patientId = scope.userId;
   if (scope.role === "DOCTOR") where.doctorId = scope.userId;
-  // ADMIN calls this unscoped from /admin/appointments and may filter by doctorId explicitly.
-  if (scope.role === "ADMIN" && "doctorId" in query && query.doctorId) where.doctorId = query.doctorId;
+  // OWNER calls this unscoped (within the tenant — the Prisma extension
+  // still confines it to req.tenantId) from /admin/appointments and may
+  // filter by doctorId explicitly.
+  if (scope.role === "OWNER" && "doctorId" in query && query.doctorId) where.doctorId = query.doctorId;
 
   if (query.status) where.status = query.status;
   if (query.from || query.to) {
@@ -175,7 +180,7 @@ export async function rejectAppointment(id: string, doctorId: string, rejectionR
 
 interface CancelActor {
   id: string;
-  role: "PATIENT" | "DOCTOR" | "ADMIN";
+  role: "PATIENT" | "DOCTOR" | "OWNER";
 }
 
 export async function cancelAppointment(id: string, actor: CancelActor) {
@@ -185,7 +190,7 @@ export async function cancelAppointment(id: string, actor: CancelActor) {
   const owns =
     (actor.role === "PATIENT" && appt.patientId === actor.id) ||
     (actor.role === "DOCTOR" && appt.doctorId === actor.id) ||
-    actor.role === "ADMIN";
+    actor.role === "OWNER";
   if (!owns) throw new ForbiddenError();
 
   if (

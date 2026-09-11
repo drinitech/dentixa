@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { authenticate } from "../middleware/authenticate";
+import { resolveTenant } from "../middleware/resolveTenant";
 import { authorize } from "../middleware/authorize";
 import { validate } from "../middleware/validate";
 import {
@@ -18,7 +19,7 @@ import {
 
 export const userRouter = Router();
 
-userRouter.use(authenticate);
+userRouter.use(authenticate, resolveTenant);
 
 userRouter.get("/me/notification-preferences", getNotificationPreferencesHandler);
 userRouter.patch(

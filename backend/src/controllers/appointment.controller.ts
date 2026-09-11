@@ -19,7 +19,7 @@ export const createHandler = asyncHandler(async (req: Request, res: Response) =>
 });
 
 export const listHandler = asyncHandler(async (req: Request, res: Response) => {
-  const role = req.user!.role;
+  const role = req.membership!.role;
   if (role !== "PATIENT" && role !== "DOCTOR") {
     throw new BadRequestError("Use /admin/appointments for a global view");
   }
@@ -73,7 +73,7 @@ export const rejectHandler = asyncHandler(async (req: Request, res: Response) =>
 export const cancelHandler = asyncHandler(async (req: Request, res: Response) => {
   const appt = await appointmentService.cancelAppointment(req.params.id, {
     id: req.user!.id,
-    role: req.user!.role as "PATIENT" | "DOCTOR" | "ADMIN",
+    role: req.membership!.role as "PATIENT" | "DOCTOR" | "OWNER",
   });
   await notifyWaitlistIfSlotsOpened(appt.doctorId, appt.date.toISOString().slice(0, 10));
   res.json({ appointment: appt });
@@ -95,7 +95,7 @@ export const updateVisitNotesHandler = asyncHandler(async (req: Request, res: Re
 });
 
 export const exportHandler = asyncHandler(async (req: Request, res: Response) => {
-  const role = req.user!.role;
+  const role = req.membership!.role;
   if (role !== "PATIENT" && role !== "DOCTOR") {
     throw new BadRequestError("Use /admin/appointments/export.xlsx for a global view");
   }

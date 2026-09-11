@@ -3,7 +3,7 @@ import { prisma } from "../lib/prisma";
 import { ConflictError } from "../errors/ConflictError";
 import { ForbiddenError } from "../errors/ForbiddenError";
 import { NotFoundError } from "../errors/NotFoundError";
-import { DEFAULT_TENANT_ID } from "../lib/tenant";
+import { getTenantId } from "../lib/tenantContext";
 import type { ReplaceScheduleInput, CreateExceptionInput } from "../validations/schedule.schema";
 
 function parseDateOnly(date: string): Date {
@@ -23,8 +23,9 @@ export async function replaceSchedule(doctorId: string, input: ReplaceScheduleIn
   return prisma.$transaction(async (tx) => {
     await tx.doctorSchedule.deleteMany({ where: { doctorId } });
     if (input.windows.length === 0) return [];
+    const tenantId = getTenantId();
     await tx.doctorSchedule.createMany({
-      data: input.windows.map((w) => ({ ...w, doctorId, tenantId: DEFAULT_TENANT_ID })),
+      data: input.windows.map((w) => ({ ...w, doctorId, tenantId })),
     });
     return tx.doctorSchedule.findMany({
       where: { doctorId },
@@ -43,7 +44,7 @@ export async function listExceptions(doctorId: string) {
 export async function addException(doctorId: string, input: CreateExceptionInput) {
   try {
     return await prisma.scheduleException.create({
-      data: { tenantId: DEFAULT_TENANT_ID, doctorId, date: parseDateOnly(input.date), reason: input.reason },
+      data: { tenantId: getTenantId(), doctorId, date: parseDateOnly(input.date), reason: input.reason },
     });
   } catch (err) {
     if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {

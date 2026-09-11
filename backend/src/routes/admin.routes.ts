@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { authenticate } from "../middleware/authenticate";
+import { resolveTenant } from "../middleware/resolveTenant";
 import { authorize } from "../middleware/authorize";
 import { validate } from "../middleware/validate";
 import { createDoctorSchema, updateDoctorSchema, listUsersQuerySchema } from "../validations/admin.schema";
@@ -40,7 +41,7 @@ import {
 
 export const adminRouter = Router();
 
-adminRouter.use(authenticate, authorize("ADMIN"));
+adminRouter.use(authenticate, resolveTenant, authorize("OWNER"));
 
 adminRouter.post("/doctors", validate(createDoctorSchema), createDoctorHandler);
 adminRouter.get("/doctors", listDoctorsHandler);

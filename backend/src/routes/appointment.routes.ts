@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { authenticate } from "../middleware/authenticate";
+import { resolveTenant } from "../middleware/resolveTenant";
 import { authorize } from "../middleware/authorize";
 import { validate } from "../middleware/validate";
 import {
@@ -24,7 +25,7 @@ import { createReviewHandler } from "../controllers/review.controller";
 
 export const appointmentRouter = Router();
 
-appointmentRouter.use(authenticate);
+appointmentRouter.use(authenticate, resolveTenant);
 
 appointmentRouter.post("/", authorize("PATIENT"), validate(createAppointmentSchema), createHandler);
 appointmentRouter.get("/", validate(listAppointmentsQuerySchema, "query"), listHandler);
