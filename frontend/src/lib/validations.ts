@@ -14,6 +14,26 @@ export const registerSchema = z.object({
 });
 export type RegisterInput = z.infer<typeof registerSchema>;
 
+export const registerClinicSchema = z.object({
+  clinicName: z.string().trim().min(2, "Clinic name must be at least 2 characters"),
+  slug: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .min(3, "Must be at least 3 characters")
+    .regex(/^[a-z0-9]+(-[a-z0-9]+)*$/, "Only lowercase letters, numbers, and hyphens"),
+  ownerName: z.string().trim().min(2, "Name must be at least 2 characters"),
+  ownerEmail: z.string().trim().email("Invalid email address"),
+  ownerPassword: z.string().min(8, "Password must be at least 8 characters"),
+});
+export type RegisterClinicInput = z.infer<typeof registerClinicSchema>;
+
+export const inviteStaffSchema = z.object({
+  email: z.string().trim().email("Invalid email address"),
+  role: z.enum(["OWNER", "RECEPTIONIST", "DOCTOR", "PATIENT"]),
+});
+export type InviteStaffFormInput = z.infer<typeof inviteStaffSchema>;
+
 export const createAppointmentSchema = z.object({
   doctorId: z.string().min(1, "Choose a doctor"),
   serviceId: z.string().min(1, "Choose a service"),

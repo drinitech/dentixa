@@ -2,7 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiFetch } from "@/lib/api-client";
-import type { AdminUser, Location, ClinicService, ClinicHoliday, Role } from "@/types";
+import type { AdminUser, Location, ClinicService, ClinicHoliday, Role, Invite, MembershipRole } from "@/types";
 
 // --- Doctors ---
 
@@ -209,6 +209,32 @@ export function useDeactivateService() {
       queryClient.invalidateQueries({ queryKey: ["admin-services"] });
       queryClient.invalidateQueries({ queryKey: ["services"] });
     },
+  });
+}
+
+// --- Staff invites ---
+
+export function useInvites() {
+  return useQuery({
+    queryKey: ["admin-invites"],
+    queryFn: () => apiFetch<{ invites: Invite[] }>("/admin/invites"),
+  });
+}
+
+export function useCreateInvite() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { email: string; role: MembershipRole }) =>
+      apiFetch<{ invite: Invite }>("/admin/invites", { method: "POST", body: input }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["admin-invites"] }),
+  });
+}
+
+export function useRevokeInvite() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => apiFetch<void>(`/admin/invites/${id}`, { method: "DELETE" }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["admin-invites"] }),
   });
 }
 

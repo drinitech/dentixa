@@ -1,4 +1,5 @@
 export type Role = "PATIENT" | "DOCTOR" | "ADMIN";
+export type MembershipRole = "OWNER" | "RECEPTIONIST" | "DOCTOR" | "PATIENT";
 export type AppointmentStatus = "PENDING" | "APPROVED" | "REJECTED" | "CANCELLED" | "DONE" | "NO_SHOW";
 export type NotificationChannel = "EMAIL" | "SMS";
 export type NotificationEventType =
@@ -142,6 +143,15 @@ export interface DoctorStats {
   pendingCount: number;
   doneCount: number;
   noShowCount: number;
+}
+
+export interface Invite {
+  id: string;
+  email: string;
+  role: MembershipRole;
+  status: "PENDING" | "ACCEPTED" | "REVOKED";
+  expiresAt: string;
+  createdAt: string;
 }
 
 export interface AdminStats {

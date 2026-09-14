@@ -23,6 +23,14 @@ interface AuthContextValue {
     password: string;
     phone?: string;
   }) => Promise<{ user: User; tenantSlug: string | null }>;
+  registerClinic: (input: {
+    clinicName: string;
+    slug: string;
+    ownerName: string;
+    ownerEmail: string;
+    ownerPassword: string;
+  }) => Promise<{ user: User; tenantSlug: string | null }>;
+  acceptInvite: (token: string, input: { name?: string; password: string }) => Promise<{ user: User; tenantSlug: string | null }>;
   logout: () => Promise<void>;
   patchUser: (patch: Partial<User>) => void;
   changePassword: (currentPassword: string, newPassword: string) => Promise<User>;
@@ -80,6 +88,37 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     [],
   );
 
+  const registerClinic = useCallback(
+    async (input: {
+      clinicName: string;
+      slug: string;
+      ownerName: string;
+      ownerEmail: string;
+      ownerPassword: string;
+    }) => {
+      const data = await apiFetch<AuthResponse>("/auth/register-clinic", {
+        method: "POST",
+        body: input,
+        skipAuthRetry: true,
+      });
+      setAccessToken(data.accessToken);
+      setUser(data.user);
+      return { user: data.user, tenantSlug: data.tenantSlug };
+    },
+    [],
+  );
+
+  const acceptInvite = useCallback(async (token: string, input: { name?: string; password: string }) => {
+    const data = await apiFetch<AuthResponse>(`/invites/${token}/accept`, {
+      method: "POST",
+      body: input,
+      skipAuthRetry: true,
+    });
+    setAccessToken(data.accessToken);
+    setUser(data.user);
+    return { user: data.user, tenantSlug: data.tenantSlug };
+  }, []);
+
   const logout = useCallback(async () => {
     await apiFetch("/auth/logout", { method: "POST", skipAuthRetry: true }).catch(() => {});
     setAccessToken(null);
@@ -101,7 +140,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout, patchUser, changePassword }}>
+    <AuthContext.Provider
+      value={{ user, loading, login, register, registerClinic, acceptInvite, logout, patchUser, changePassword }}
+    >
       {children}
     </AuthContext.Provider>
   );

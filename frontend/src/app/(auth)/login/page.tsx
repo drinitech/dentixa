@@ -76,6 +76,12 @@ export default function LoginPage() {
             Register
           </Link>
         </p>
+        <p className="mt-2 text-center text-sm text-muted-foreground">
+          Own a clinic?{" "}
+          <Link href="/register-clinic" className="font-medium text-primary hover:underline">
+            Register it
+          </Link>
+        </p>
       </CardContent>
     </Card>
   );

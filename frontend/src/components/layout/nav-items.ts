@@ -9,6 +9,7 @@ import {
   Settings,
   CalendarOff,
   Building2,
+  UserPlus,
 } from "lucide-react";
 import type { NavItem } from "./app-shell";
 import type { Role } from "@/types";
@@ -44,6 +45,7 @@ export function adminNav(slug: string): NavItem[] {
     { label: "Locations", href: `${base}/locations`, icon: Building2 },
     { label: "Doctors", href: `${base}/doctors`, icon: Stethoscope },
     { label: "Users", href: `${base}/users`, icon: Users },
+    { label: "Staff invites", href: `${base}/staff`, icon: UserPlus },
     { label: "Appointments", href: `${base}/appointments`, icon: CalendarDays },
     { label: "Services", href: `${base}/services`, icon: Settings },
     { label: "Holidays", href: `${base}/holidays`, icon: CalendarOff },
