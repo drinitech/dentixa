@@ -43,11 +43,31 @@ export async function getPrimaryTenantSlug(userId: string): Promise<string | nul
   return membership?.tenant.slug ?? null;
 }
 
-export async function register(input: RegisterInput) {
+// /auth/register has no resolveTenant middleware (it runs before the caller
+// is authenticated, and resolveTenant needs req.user to check Membership) —
+// so the tenant is instead read straight off an optional X-Tenant-Slug
+// header, unauthenticated, the same way resolveTenant.ts bootstraps a tenant
+// from a slug before any context exists. Reached via /register (no header —
+// joins the demo tenant, matching pre-Milestone-3 behavior for the generic
+// marketing-page signup) or /c/[slug]/register (TenantProvider always sends
+// the header — joins that real clinic). A signup for an email that already
+// has an account anywhere is still rejected outright, even at a different
+// clinic — joining an *additional* clinic on an existing account is the
+// self-service equivalent of accepting an invite (see invite.service.ts's
+// acceptInvite for that flow) and isn't exposed from plain registration yet.
+async function resolveRegistrationTenantId(slug?: string): Promise<string> {
+  if (!slug) return DEFAULT_TENANT_ID;
+  const tenant = await prisma.tenant.findUnique({ where: { slug } });
+  if (!tenant || tenant.status !== "ACTIVE") throw new BadRequestError("Clinic not found");
+  return tenant.id;
+}
+
+export async function register(input: RegisterInput, tenantSlug?: string) {
   const existing = await prisma.user.findUnique({ where: { email: input.email } });
   if (existing) {
     throw new BadRequestError("An account with this email already exists");
   }
+  const tenantId = await resolveRegistrationTenantId(tenantSlug);
 
   const passwordHash = await bcrypt.hash(input.password, SALT_ROUNDS);
   // Public registration always creates PATIENT accounts — doctor/admin accounts
@@ -63,15 +83,11 @@ export async function register(input: RegisterInput) {
   });
 
   await seedDefaultNotificationPreferences(user.id);
-  // Public registration doesn't ask which clinic yet (that's Milestone 2's
-  // frontend step / Milestone 3's onboarding) — every self-registered
-  // patient becomes a member of the demo tenant, matching today's
-  // single-clinic behavior exactly.
-  await prisma.membership.create({ data: { userId: user.id, tenantId: DEFAULT_TENANT_ID, role: "PATIENT" } });
+  await prisma.membership.create({ data: { userId: user.id, tenantId, role: "PATIENT" } });
 
   const tokens = issueTokens(user);
-  const tenantSlug = await getPrimaryTenantSlug(user.id);
-  return { user, tenantSlug, ...tokens };
+  const resolvedSlug = await getPrimaryTenantSlug(user.id);
+  return { user, tenantSlug: resolvedSlug, ...tokens };
 }
 
 export async function login(input: LoginInput) {

@@ -1,17 +1,23 @@
 import { describe, it, expect, beforeAll, afterAll, vi } from "vitest";
 import request from "supertest";
+import { createApp } from "../../app";
+import { prismaUnscoped as prisma } from "../../lib/prisma";
 
 // sendEmail is mocked (kept real otherwise) so tests can pull the raw
 // invite token out of the mailed link — the DB only ever stores its hash
-// (see invite.service.ts), matching how a real invitee would get it.
-const sendEmailMock = vi.fn().mockResolvedValue(undefined);
+// (see invite.service.ts), matching how a real invitee would get it. Vitest
+// hoists vi.mock calls above every import in this file (including the
+// static imports above), so createApp already resolves against the mocked
+// module — no dynamic import() needed, which also avoids top-level await
+// (unsupported by this project's CommonJS build target, see tsconfig.json).
+// vi.mock is hoisted above every import in this file, so the mock fn it
+// references must be too — plain `const sendEmailMock = vi.fn()` would
+// throw "Cannot access before initialization" once hoisted.
+const { sendEmailMock } = vi.hoisted(() => ({ sendEmailMock: vi.fn().mockResolvedValue(undefined) }));
 vi.mock("../../services/notification.service", async (importOriginal) => {
   const actual = await importOriginal<typeof import("../../services/notification.service")>();
   return { ...actual, sendEmail: sendEmailMock };
 });
-
-const { createApp } = await import("../../app");
-const { prismaUnscoped: prisma } = await import("../../lib/prisma");
 
 // Real HTTP requests against the real app and real Postgres, mirroring
 // isolation.integration.test.ts — the invite flow spans public (no tenant
@@ -53,6 +59,32 @@ describe("clinic registration + staff invites", () => {
 
     const membership = await prisma.membership.findFirst({ where: { user: { email: `it-owner-${RUN_ID}@test.local` } } });
     expect(membership?.role).toBe("OWNER");
+  });
+
+  it("self-registration with X-Tenant-Slug joins that clinic, not the demo tenant", async () => {
+    const email = `it-patient-${RUN_ID}@test.local`;
+    const res = await request(app)
+      .post("/api/auth/register")
+      .set("X-Tenant-Slug", slug)
+      .send({ name: "Real Patient", email, password: PASSWORD });
+
+    expect(res.status).toBe(201);
+    expect(res.body.tenantSlug).toBe(slug);
+
+    const user = await prisma.user.findUnique({ where: { email } });
+    const memberships = await prisma.membership.findMany({ where: { userId: user!.id } });
+    expect(memberships).toHaveLength(1);
+    const tenant = await prisma.tenant.findUniqueOrThrow({ where: { id: memberships[0].tenantId } });
+    expect(tenant.slug).toBe(slug);
+    expect(tenant.slug).not.toBe("demo-clinic");
+  });
+
+  it("self-registration with no X-Tenant-Slug still falls back to the demo tenant", async () => {
+    const email = `it-patient-nohdr-${RUN_ID}@test.local`;
+    const res = await request(app).post("/api/auth/register").send({ name: "No Header Patient", email, password: PASSWORD });
+
+    expect(res.status).toBe(201);
+    expect(res.body.tenantSlug).toBe("demo-clinic");
   });
 
   it("rejects a duplicate slug", async () => {

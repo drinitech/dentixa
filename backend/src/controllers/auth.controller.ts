@@ -43,7 +43,10 @@ export function serializeUser(user: {
 }
 
 export const registerHandler = asyncHandler(async (req: Request, res: Response) => {
-  const { user, tenantSlug, accessToken, refreshToken } = await authService.register(req.body);
+  const { user, tenantSlug, accessToken, refreshToken } = await authService.register(
+    req.body,
+    req.header("X-Tenant-Slug") || undefined,
+  );
   setRefreshCookie(res, refreshToken);
   res.status(201).json({ user: serializeUser(user), tenantSlug, accessToken });
 });
