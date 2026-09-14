@@ -8,6 +8,11 @@ function startOfWeek(): Date {
   return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), diff));
 }
 
+function startOfToday(): Date {
+  const now = new Date();
+  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+}
+
 export async function getDoctorStats(doctorId: string) {
   const weekStart = startOfWeek();
 
@@ -25,7 +30,22 @@ export async function getDoctorStats(doctorId: string) {
 }
 
 export async function getAdminStats(tenantId: string) {
-  const [totalAppointments, byStatusRaw, perDoctorRaw, monthlyTrendRaw] = await Promise.all([
+  const today = startOfToday();
+  const tomorrow = new Date(today.getTime() + 24 * 60 * 60 * 1000);
+  const weekStart = startOfWeek();
+
+  const [
+    totalAppointments,
+    byStatusRaw,
+    perDoctorRaw,
+    monthlyTrendRaw,
+    todayCount,
+    thisWeekCount,
+    doneCount,
+    noShowCount,
+    serviceCountsRaw,
+    revenueRaw,
+  ] = await Promise.all([
     prisma.appointment.count(),
     prisma.appointment.groupBy({ by: ["status"], _count: { _all: true } }),
     prisma.appointment.groupBy({ by: ["doctorId", "status"], _count: { _all: true } }),
@@ -40,6 +60,23 @@ export async function getAdminStats(tenantId: string) {
       GROUP BY 1
       ORDER BY 1 DESC
       LIMIT 12
+    `,
+    prisma.appointment.count({ where: { date: { gte: today, lt: tomorrow } } }),
+    prisma.appointment.count({ where: { date: { gte: weekStart } } }),
+    prisma.appointment.count({ where: { status: "DONE" } }),
+    prisma.appointment.count({ where: { status: "NO_SHOW" } }),
+    prisma.appointment.groupBy({
+      by: ["serviceId"],
+      where: { serviceId: { not: null } },
+      _count: { _all: true },
+    }),
+    // Revenue only counts completed visits, not pending/future ones — same
+    // tenantId caveat as monthlyTrend above (raw query, explicit filter).
+    prisma.$queryRaw<{ revenue: string | null }[]>`
+      SELECT COALESCE(SUM(cs.price), 0)::text AS revenue
+      FROM "Appointment" a
+      JOIN "ClinicService" cs ON cs.id = a."serviceId"
+      WHERE a."tenantId" = ${getTenantId()} AND a.status = 'DONE'
     `,
   ]);
 
@@ -57,10 +94,29 @@ export async function getAdminStats(tenantId: string) {
     return { doctorId: doctor.id, doctorName: doctor.name, total, approved, rejected };
   });
 
+  const topServiceCounts = [...serviceCountsRaw].sort((a, b) => b._count._all - a._count._all).slice(0, 5);
+  const topServiceIds = topServiceCounts.map((r) => r.serviceId).filter((id): id is string => id !== null);
+  const services = topServiceIds.length
+    ? await prisma.clinicService.findMany({ where: { id: { in: topServiceIds } }, select: { id: true, name: true } })
+    : [];
+  const topServices = topServiceCounts.map((r) => ({
+    serviceId: r.serviceId!,
+    serviceName: services.find((s) => s.id === r.serviceId)?.name ?? "Unknown",
+    count: r._count._all,
+  }));
+
+  const completedOrNoShow = doneCount + noShowCount;
+  const noShowRate = completedOrNoShow > 0 ? (noShowCount / completedOrNoShow) * 100 : 0;
+
   return {
     totalAppointments,
     byStatus: Object.fromEntries(byStatusRaw.map((r) => [r.status, r._count._all])),
     perDoctor,
     monthlyTrend: monthlyTrendRaw.map((r) => ({ month: r.month, count: Number(r.count) })),
+    todayCount,
+    thisWeekCount,
+    noShowRate,
+    topServices,
+    estimatedRevenue: Number(revenueRaw[0]?.revenue ?? 0),
   };
 }

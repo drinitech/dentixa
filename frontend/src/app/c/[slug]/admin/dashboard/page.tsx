@@ -2,12 +2,12 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
-import { CalendarDays, Clock, Stethoscope, XCircle } from "lucide-react";
+import { CalendarDays, Clock, Stethoscope, XCircle, CalendarClock, TrendingUp, UserX, DollarSign } from "lucide-react";
 import { PageHeader } from "@/components/common/page-header";
 import { PageLoading } from "@/components/common/loading-spinner";
 import { EmptyState } from "@/components/common/empty-state";
 import { StatTile } from "@/components/common/stat-tile";
-import { MonthlyTrendChart, PerDoctorChart } from "@/components/admin/stats-chart";
+import { MonthlyTrendChart, PerDoctorChart, TopServicesChart } from "@/components/admin/stats-chart";
 import { AppointmentsTable } from "@/components/admin/appointments-table";
 import { DoctorsTable } from "@/components/admin/doctors-table";
 import { useAdminStats } from "@/hooks/use-stats";
@@ -97,6 +97,13 @@ export default function AdminDashboardPage() {
         />
       </div>
 
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <StatTile icon={CalendarClock} label="Today" value={stats.todayCount} />
+        <StatTile icon={TrendingUp} label="This week" value={stats.thisWeekCount} />
+        <StatTile icon={UserX} label="No-show rate" value={`${stats.noShowRate.toFixed(0)}%`} />
+        <StatTile icon={DollarSign} label="Estimated revenue" value={`$${stats.estimatedRevenue.toFixed(2)}`} />
+      </div>
+
       {filter && (
         <div>
           <p className="mb-3 text-sm font-medium text-foreground">{FILTER_LABEL[filter]}</p>
@@ -123,6 +130,7 @@ export default function AdminDashboardPage() {
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <MonthlyTrendChart data={stats.monthlyTrend} />
         <PerDoctorChart data={stats.perDoctor} />
+        <TopServicesChart data={stats.topServices} />
       </div>
     </div>
   );

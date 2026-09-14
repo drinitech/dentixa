@@ -55,6 +55,40 @@ export function MonthlyTrendChart({ data }: { data: AdminStats["monthlyTrend"] }
   );
 }
 
+export function TopServicesChart({ data }: { data: AdminStats["topServices"] }) {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Most requested services</CardTitle>
+      </CardHeader>
+      <CardContent className="h-64 pt-2">
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={data} layout="vertical" barCategoryGap={10}>
+            <CartesianGrid horizontal={false} stroke="var(--chart-grid)" />
+            <XAxis
+              type="number"
+              allowDecimals={false}
+              tick={{ fontSize: 11, fill: "var(--chart-axis)" }}
+              axisLine={false}
+              tickLine={false}
+            />
+            <YAxis
+              type="category"
+              dataKey="serviceName"
+              width={90}
+              tick={{ fontSize: 11, fill: "var(--chart-axis)" }}
+              axisLine={{ stroke: "var(--chart-grid)" }}
+              tickLine={false}
+            />
+            <Tooltip contentStyle={TOOLTIP_STYLE} cursor={{ fill: "var(--color-muted)" }} />
+            <Bar dataKey="count" name="Appointments" fill="var(--chart-approved)" radius={[0, 4, 4, 0]} maxBarSize={24} />
+          </BarChart>
+        </ResponsiveContainer>
+      </CardContent>
+    </Card>
+  );
+}
+
 export function PerDoctorChart({ data }: { data: AdminStats["perDoctor"] }) {
   return (
     <Card>

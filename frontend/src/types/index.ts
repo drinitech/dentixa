@@ -159,4 +159,9 @@ export interface AdminStats {
   byStatus: Record<string, number>;
   perDoctor: { doctorId: string; doctorName: string; total: number; approved: number; rejected: number }[];
   monthlyTrend: { month: string; count: number }[];
+  todayCount: number;
+  thisWeekCount: number;
+  noShowRate: number;
+  topServices: { serviceId: string; serviceName: string; count: number }[];
+  estimatedRevenue: number;
 }
