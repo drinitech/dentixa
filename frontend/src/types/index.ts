@@ -185,4 +185,9 @@ export interface AdminStats {
   noShowRate: number;
   topServices: { serviceId: string; serviceName: string; count: number }[];
   estimatedRevenue: number;
+  plan: "FREE" | "PRO";
+  doctorCount: number;
+  doctorLimit: number | null;
+  appointmentsThisMonth: number;
+  appointmentMonthlyLimit: number | null;
 }

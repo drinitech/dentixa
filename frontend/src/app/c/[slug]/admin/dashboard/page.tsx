@@ -7,6 +7,8 @@ import { PageHeader } from "@/components/common/page-header";
 import { PageLoading } from "@/components/common/loading-spinner";
 import { EmptyState } from "@/components/common/empty-state";
 import { StatTile } from "@/components/common/stat-tile";
+import { Card } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 import { MonthlyTrendChart, PerDoctorChart, TopServicesChart } from "@/components/admin/stats-chart";
 import { AppointmentsTable } from "@/components/admin/appointments-table";
 import { DoctorsTable } from "@/components/admin/doctors-table";
@@ -65,6 +67,28 @@ export default function AdminDashboardPage() {
         title="Clinic overview"
         description="Aggregate stats across the whole clinic — click a stat to see its table."
       />
+
+      <Card className="flex flex-wrap items-center justify-between gap-2 p-4">
+        <div className="flex items-center gap-2">
+          <span
+            className={cn(
+              "rounded-full px-2.5 py-1 text-xs font-semibold",
+              stats.plan === "PRO" ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground",
+            )}
+          >
+            {stats.plan === "PRO" ? "Pro plan" : "Free plan"}
+          </span>
+          {stats.plan === "FREE" && (
+            <span className="text-sm text-muted-foreground">
+              {stats.doctorCount}/{stats.doctorLimit} doctor{stats.doctorLimit === 1 ? "" : "s"} ·{" "}
+              {stats.appointmentsThisMonth}/{stats.appointmentMonthlyLimit} appointments this month
+            </span>
+          )}
+        </div>
+        {stats.plan === "FREE" && (
+          <span className="text-xs text-muted-foreground">Contact us to upgrade to Pro for unlimited usage.</span>
+        )}
+      </Card>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatTile
