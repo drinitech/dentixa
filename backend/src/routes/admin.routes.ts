@@ -12,6 +12,8 @@ import {
 } from "../validations/service.schema";
 import { createClinicHolidaySchema, listClinicHolidaysQuerySchema } from "../validations/clinicHoliday.schema";
 import { createLocationSchema, updateLocationSchema } from "../validations/location.schema";
+import { createInviteSchema } from "../validations/invite.schema";
+import { createInviteHandler, listInvitesHandler, revokeInviteHandler } from "../controllers/invite.controller";
 import {
   createDoctorHandler,
   listDoctorsHandler,
@@ -89,6 +91,10 @@ adminRouter.post(
   createClinicHolidayHandler,
 );
 adminRouter.delete("/clinic-holidays/:id", deleteClinicHolidayHandler);
+
+adminRouter.post("/invites", validate(createInviteSchema), createInviteHandler);
+adminRouter.get("/invites", listInvitesHandler);
+adminRouter.delete("/invites/:id", revokeInviteHandler);
 
 adminRouter.get("/locations", listAllLocationsHandler);
 adminRouter.post("/locations", validate(createLocationSchema), createLocationHandler);

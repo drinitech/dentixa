@@ -34,6 +34,7 @@ const TENANT_SCOPED_MODELS = new Set([
   "Appointment",
   "RecallReminder",
   "Review",
+  "Invite",
 ]);
 
 const WHERE_INJECTED_OPERATIONS = new Set([

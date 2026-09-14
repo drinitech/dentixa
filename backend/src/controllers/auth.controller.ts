@@ -5,9 +5,9 @@ import * as authService from "../services/auth.service";
 import { prisma } from "../lib/prisma";
 import { UnauthorizedError } from "../errors/UnauthorizedError";
 
-const REFRESH_COOKIE_NAME = "dentixa_refresh";
+export const REFRESH_COOKIE_NAME = "dentixa_refresh";
 
-function setRefreshCookie(res: Response, token: string) {
+export function setRefreshCookie(res: Response, token: string) {
   const isProd = process.env.NODE_ENV === "production";
   res.cookie(REFRESH_COOKIE_NAME, token, {
     httpOnly: true,
@@ -22,7 +22,7 @@ function setRefreshCookie(res: Response, token: string) {
   });
 }
 
-function serializeUser(user: {
+export function serializeUser(user: {
   id: string;
   name: string;
   email: string;
@@ -44,6 +44,12 @@ function serializeUser(user: {
 
 export const registerHandler = asyncHandler(async (req: Request, res: Response) => {
   const { user, tenantSlug, accessToken, refreshToken } = await authService.register(req.body);
+  setRefreshCookie(res, refreshToken);
+  res.status(201).json({ user: serializeUser(user), tenantSlug, accessToken });
+});
+
+export const registerClinicHandler = asyncHandler(async (req: Request, res: Response) => {
+  const { user, tenantSlug, accessToken, refreshToken } = await authService.registerClinic(req.body);
   setRefreshCookie(res, refreshToken);
   res.status(201).json({ user: serializeUser(user), tenantSlug, accessToken });
 });

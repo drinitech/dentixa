@@ -67,6 +67,12 @@ enum MembershipStatus {
   DISABLED
 }
 
+enum InviteStatus {
+  PENDING
+  ACCEPTED
+  REVOKED
+}
+
 // A SaaS customer (a dental practice/business) — distinct from Location,
 // which is a physical address a practice's doctors work out of. Not yet
 // referenced by any tenant-scoped table; that lands once every such table
@@ -82,6 +88,7 @@ model Tenant {
   updatedAt DateTime     @updatedAt
 
   memberships        Membership[]
+  invites            Invite[]
   locations          Location[]
   services           ClinicService[]
   doctorSchedules    DoctorSchedule[]
@@ -110,6 +117,32 @@ model Membership {
 
   @@unique([userId, tenantId])
   @@index([tenantId, role])
+}
+
+// A pending offer for someone to join a tenant with a given role. Tenant-
+// scoped (auto-injected by the Prisma extension) for creation/listing/revoke,
+// which all happen through an already-resolved OWNER session — but the
+// accept flow is public (the invitee isn't in any tenant yet, so there's no
+// context to resolve), so it looks the row up directly via prismaUnscoped by
+// tokenHash, the same way resolveTenant.ts bootstraps tenant context from a
+// slug. Mirrors User.passwordResetTokenHash: only the hash is stored, never
+// the raw token mailed to the invitee.
+model Invite {
+  id              String       @id @default(cuid())
+  tenantId        String
+  tenant          Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  email           String
+  role            MembershipRole
+  tokenHash       String       @unique
+  status          InviteStatus @default(PENDING)
+  invitedByUserId String
+  invitedBy       User         @relation("InvitesSent", fields: [invitedByUserId], references: [id], onDelete: Cascade)
+  expiresAt       DateTime
+  acceptedAt      DateTime?
+  createdAt       DateTime     @default(now())
+
+  @@index([tenantId, status])
+  @@index([email])
 }
 
 model User {
@@ -157,6 +190,7 @@ model User {
   memberships             Membership[]
   recallsAsPatient        RecallReminder[]          @relation("PatientRecalls")
   recallsAsDoctor         RecallReminder[]          @relation("DoctorRecalls")
+  invitesSent             Invite[]                  @relation("InvitesSent")
 
   @@index([role])
   @@index([locationId])

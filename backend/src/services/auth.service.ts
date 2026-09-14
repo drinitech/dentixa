@@ -12,6 +12,7 @@ import type {
   ForgotPasswordInput,
   ResetPasswordInput,
 } from "../validations/auth.schema";
+import type { RegisterClinicInput } from "../validations/tenant.schema";
 import { seedDefaultNotificationPreferences, sendEmail } from "./notification.service";
 
 const SALT_ROUNDS = 12;
@@ -21,7 +22,7 @@ function hashResetToken(token: string): string {
   return crypto.createHash("sha256").update(token).digest("hex");
 }
 
-function issueTokens(user: { id: string; role: any; name: string; tokenVersion: number }) {
+export function issueTokens(user: { id: string; role: any; name: string; tokenVersion: number }) {
   const accessToken = signAccessToken({ sub: user.id, role: user.role, name: user.name });
   const refreshToken = signRefreshToken({ sub: user.id, tokenVersion: user.tokenVersion });
   return { accessToken, refreshToken };
@@ -33,7 +34,7 @@ function issueTokens(user: { id: string; role: any; name: string; tokenVersion: 
 // login. Picks the oldest active Membership, which is the only one that
 // exists for any current user; once one person can belong to several real
 // tenants (Milestone 3+), this is the seam where a clinic-picker step goes.
-async function getPrimaryTenantSlug(userId: string): Promise<string | null> {
+export async function getPrimaryTenantSlug(userId: string): Promise<string | null> {
   const membership = await prisma.membership.findFirst({
     where: { userId, status: "ACTIVE" },
     orderBy: { createdAt: "asc" },
@@ -172,4 +173,36 @@ export async function resetPassword(input: ResetPasswordInput) {
       passwordResetExpiresAt: null,
     },
   });
+}
+
+// Public self-service clinic signup (Milestone 3 onboarding): always creates
+// a brand-new User + Tenant + Membership(OWNER) together. An existing user
+// spinning up an additional clinic under their current account is a future
+// seam (would need an authenticated variant that skips the User creation
+// step) — out of scope for MVP, which only has one owner-per-clinic signup.
+export async function registerClinic(input: RegisterClinicInput) {
+  const [existingUser, existingSlug] = await Promise.all([
+    prisma.user.findUnique({ where: { email: input.ownerEmail } }),
+    prisma.tenant.findUnique({ where: { slug: input.slug } }),
+  ]);
+  if (existingUser) throw new BadRequestError("An account with this email already exists");
+  if (existingSlug) throw new BadRequestError("This clinic URL is already taken");
+
+  const passwordHash = await bcrypt.hash(input.ownerPassword, SALT_ROUNDS);
+
+  const { user, tenant } = await prisma.$transaction(async (tx) => {
+    const tenant = await tx.tenant.create({
+      data: { name: input.clinicName, slug: input.slug },
+    });
+    const user = await tx.user.create({
+      data: { name: input.ownerName, email: input.ownerEmail, passwordHash, role: "ADMIN" },
+    });
+    await tx.membership.create({ data: { userId: user.id, tenantId: tenant.id, role: "OWNER" } });
+    return { user, tenant };
+  });
+
+  await seedDefaultNotificationPreferences(user.id);
+
+  const tokens = issueTokens(user);
+  return { user, tenantSlug: tenant.slug, ...tokens };
 }

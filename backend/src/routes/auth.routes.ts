@@ -9,8 +9,10 @@ import {
   forgotPasswordSchema,
   resetPasswordSchema,
 } from "../validations/auth.schema";
+import { registerClinicSchema } from "../validations/tenant.schema";
 import {
   registerHandler,
+  registerClinicHandler,
   loginHandler,
   refreshHandler,
   logoutHandler,
@@ -23,6 +25,12 @@ import {
 export const authRouter = Router();
 
 authRouter.post("/register", authLimiter, validate(registerSchema), registerHandler);
+authRouter.post(
+  "/register-clinic",
+  authLimiter,
+  validate(registerClinicSchema),
+  registerClinicHandler,
+);
 authRouter.post("/login", authLimiter, validate(loginSchema), loginHandler);
 authRouter.post("/refresh", refreshHandler);
 authRouter.post("/logout", logoutHandler);
