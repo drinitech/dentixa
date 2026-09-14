@@ -2,7 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiFetch } from "@/lib/api-client";
-import type { AdminUser, Location, ClinicService, ClinicHoliday, Role, Invite, MembershipRole } from "@/types";
+import type { AdminUser, Location, ClinicService, ClinicHoliday, Role, Invite, MembershipRole, AuditLogEntry } from "@/types";
 
 // --- Doctors ---
 
@@ -235,6 +235,15 @@ export function useRevokeInvite() {
   return useMutation({
     mutationFn: (id: string) => apiFetch<void>(`/admin/invites/${id}`, { method: "DELETE" }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["admin-invites"] }),
+  });
+}
+
+// --- Audit log ---
+
+export function useAuditLog() {
+  return useQuery({
+    queryKey: ["admin-audit-log"],
+    queryFn: () => apiFetch<{ entries: AuditLogEntry[] }>("/admin/audit-log"),
   });
 }
 

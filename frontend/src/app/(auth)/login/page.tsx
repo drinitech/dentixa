@@ -30,6 +30,11 @@ export default function LoginPage() {
     setSubmitting(true);
     try {
       const { user, tenantSlug } = await login(data.email, data.password);
+      if (user.isSuperAdmin) {
+        toast.success(`Welcome back, ${user.name.split(" ")[0]}`);
+        router.push("/super-admin");
+        return;
+      }
       if (!tenantSlug) {
         toast.error("Your account isn't linked to a clinic yet. Contact support.");
         return;

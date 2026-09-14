@@ -16,6 +16,7 @@ export interface User {
   phone: string | null;
   avatarUrl: string | null;
   specialty: string | null;
+  isSuperAdmin: boolean;
 }
 
 export interface ClinicService {
@@ -152,6 +153,26 @@ export interface Invite {
   status: "PENDING" | "ACCEPTED" | "REVOKED";
   expiresAt: string;
   createdAt: string;
+}
+
+export interface SuperAdminTenant {
+  id: string;
+  name: string;
+  slug: string;
+  plan: "FREE" | "PRO";
+  status: "ACTIVE" | "SUSPENDED";
+  appointmentCount: number;
+  createdAt: string;
+}
+
+export interface AuditLogEntry {
+  id: string;
+  action: string;
+  entity: string;
+  entityId: string | null;
+  meta: Record<string, unknown> | null;
+  createdAt: string;
+  actor: { id: string; name: string; email: string };
 }
 
 export interface AdminStats {

@@ -10,6 +10,7 @@ import {
   CalendarOff,
   Building2,
   UserPlus,
+  ScrollText,
 } from "lucide-react";
 import type { NavItem } from "./app-shell";
 import type { Role } from "@/types";
@@ -49,6 +50,7 @@ export function adminNav(slug: string): NavItem[] {
     { label: "Appointments", href: `${base}/appointments`, icon: CalendarDays },
     { label: "Services", href: `${base}/services`, icon: Settings },
     { label: "Holidays", href: `${base}/holidays`, icon: CalendarOff },
+    { label: "Audit log", href: `${base}/audit-log`, icon: ScrollText },
     { label: "Profile", href: `${base}/profile`, icon: UserCog },
   ];
 }
