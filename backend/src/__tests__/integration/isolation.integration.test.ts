@@ -275,6 +275,24 @@ describe("cross-tenant isolation", () => {
       expect(res.status).toBe(200);
       expect(res.body.users.map((u: { id: string }) => u.id)).not.toContain(a.patient.id);
     });
+
+    it("GET /public/doctors (unauthenticated) as tenant B never includes tenant A's doctor, and omits email", async () => {
+      const res = await request(app).get("/api/public/doctors").set("X-Tenant-Slug", b.slug);
+      expect(res.status).toBe(200);
+      expect(res.body.doctors.map((d: { id: string }) => d.id)).not.toContain(a.doctor.id);
+      expect(res.body.doctors.every((d: object) => !("email" in d))).toBe(true);
+    });
+
+    it("GET /public/services (unauthenticated) as tenant B never includes tenant A's service", async () => {
+      const res = await request(app).get("/api/public/services").set("X-Tenant-Slug", b.slug);
+      expect(res.status).toBe(200);
+      expect(res.body.services.map((s: { id: string }) => s.id)).not.toContain(a.serviceId);
+    });
+
+    it("GET /public/clinic with no X-Tenant-Slug returns 404, not the demo tenant", async () => {
+      const res = await request(app).get("/api/public/clinic");
+      expect(res.status).toBe(404);
+    });
   });
 
   describe("the concurrent-booking guarantee still holds within a tenant", () => {

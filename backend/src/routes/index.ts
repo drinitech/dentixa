@@ -10,11 +10,13 @@ import { waitlistRouter } from "./waitlist.routes";
 import { locationRouter } from "./location.routes";
 import { recallRouter } from "./recall.routes";
 import { inviteRouter } from "./invite.routes";
+import { publicRouter } from "./public.routes";
 
 export const router = Router();
 
 router.use("/auth", authRouter);
 router.use("/invites", inviteRouter);
+router.use("/public", publicRouter);
 router.use("/appointments", appointmentRouter);
 router.use("/schedule", scheduleRouter);
 router.use("/services", serviceRouter);

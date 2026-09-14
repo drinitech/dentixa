@@ -1,5 +1,13 @@
 import { prisma } from "../lib/prisma";
 
+// Same shape as listActiveDoctors, minus email — this one backs the public,
+// unauthenticated clinic page (routes/public.routes.ts), so nothing a
+// scraping bot could harvest goes out.
+export async function listPublicDoctors(tenantId: string, locationId?: string) {
+  const doctors = await listActiveDoctors(tenantId, locationId);
+  return doctors.map(({ email: _email, ...rest }) => rest);
+}
+
 export async function listActiveDoctors(tenantId: string, locationId?: string) {
   const doctors = await prisma.user.findMany({
     where: {
