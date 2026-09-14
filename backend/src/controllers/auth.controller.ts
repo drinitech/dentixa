@@ -30,6 +30,7 @@ export function serializeUser(user: {
   phone: string | null;
   avatarUrl?: string | null;
   specialty?: string | null;
+  isSuperAdmin?: boolean;
 }) {
   return {
     id: user.id,
@@ -39,6 +40,7 @@ export function serializeUser(user: {
     phone: user.phone,
     avatarUrl: user.avatarUrl ?? null,
     specialty: user.specialty ?? null,
+    isSuperAdmin: user.isSuperAdmin ?? false,
   };
 }
 

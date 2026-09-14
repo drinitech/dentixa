@@ -33,6 +33,7 @@ import {
   updateServiceHandler,
   deactivateServiceHandler,
   adminStatsHandler,
+  auditLogHandler,
   listClinicHolidaysHandler,
   createClinicHolidayHandler,
   deleteClinicHolidayHandler,
@@ -79,6 +80,7 @@ adminRouter.patch("/services/:id", validate(updateClinicServiceSchema), updateSe
 adminRouter.delete("/services/:id", deactivateServiceHandler);
 
 adminRouter.get("/stats", adminStatsHandler);
+adminRouter.get("/audit-log", auditLogHandler);
 
 adminRouter.get(
   "/clinic-holidays",

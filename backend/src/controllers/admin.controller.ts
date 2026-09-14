@@ -6,11 +6,12 @@ import * as clinicServiceService from "../services/clinicService.service";
 import * as clinicHolidayService from "../services/clinicHoliday.service";
 import * as locationService from "../services/location.service";
 import * as statsService from "../services/stats.service";
+import * as auditLogService from "../services/auditLog.service";
 import { notifyWaitlistIfSlotsOpened } from "../services/waitlist.service";
 import { buildAppointmentsWorkbook } from "../lib/excel";
 
 export const createDoctorHandler = asyncHandler(async (req: Request, res: Response) => {
-  const doctor = await adminService.createDoctor(req.tenantId!, req.body);
+  const doctor = await adminService.createDoctor(req.tenantId!, req.body, req.user!.id);
   res.status(201).json({ doctor });
 });
 
@@ -20,7 +21,7 @@ export const listDoctorsHandler = asyncHandler(async (req: Request, res: Respons
 });
 
 export const updateDoctorHandler = asyncHandler(async (req: Request, res: Response) => {
-  const doctor = await adminService.updateDoctor(req.tenantId!, req.params.id, req.body);
+  const doctor = await adminService.updateDoctor(req.tenantId!, req.params.id, req.body, req.user!.id);
   res.json({ doctor });
 });
 
@@ -40,12 +41,12 @@ export const listUsersHandler = asyncHandler(async (req: Request, res: Response)
 });
 
 export const banUserHandler = asyncHandler(async (req: Request, res: Response) => {
-  const user = await adminService.setUserActive(req.tenantId!, req.params.id, false);
+  const user = await adminService.setUserActive(req.tenantId!, req.params.id, false, req.user!.id);
   res.json({ user });
 });
 
 export const unbanUserHandler = asyncHandler(async (req: Request, res: Response) => {
-  const user = await adminService.setUserActive(req.tenantId!, req.params.id, true);
+  const user = await adminService.setUserActive(req.tenantId!, req.params.id, true, req.user!.id);
   res.json({ user });
 });
 
@@ -110,6 +111,11 @@ export const deactivateServiceHandler = asyncHandler(async (req: Request, res: R
 export const adminStatsHandler = asyncHandler(async (req: Request, res: Response) => {
   const stats = await statsService.getAdminStats(req.tenantId!);
   res.json({ stats });
+});
+
+export const auditLogHandler = asyncHandler(async (req: Request, res: Response) => {
+  const entries = await auditLogService.listAuditLog(req.tenantId!);
+  res.json({ entries });
 });
 
 export const listClinicHolidaysHandler = asyncHandler(async (req: Request, res: Response) => {

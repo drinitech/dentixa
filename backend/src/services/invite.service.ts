@@ -10,6 +10,7 @@ import { UnauthorizedError } from "../errors/UnauthorizedError";
 import type { CreateInviteInput, AcceptInviteInput } from "../validations/invite.schema";
 import { seedDefaultNotificationPreferences, sendEmail } from "./notification.service";
 import { issueTokens, getPrimaryTenantSlug } from "./auth.service";
+import { logAudit } from "./auditLog.service";
 
 const SALT_ROUNDS = 12;
 const INVITE_TOKEN_TTL_MS = 72 * 60 * 60 * 1000; // 72 hours
@@ -55,6 +56,15 @@ export async function createInvite(tenantId: string, invitedByUserId: string, in
     `<p>You've been invited to join <strong>${tenant.name}</strong> as ${input.role.toLowerCase()}.</p><p><a href="${inviteUrl}">${inviteUrl}</a></p><p>This invite expires in 72 hours.</p>`,
   );
 
+  await logAudit({
+    tenantId,
+    actorUserId: invitedByUserId,
+    action: existingInvite ? "invite.resent" : "invite.created",
+    entity: "Invite",
+    entityId: invite.id,
+    meta: { email: input.email, role: input.role },
+  });
+
   return invite;
 }
 
@@ -65,12 +75,20 @@ export async function listInvites(tenantId: string) {
   });
 }
 
-export async function revokeInvite(tenantId: string, id: string) {
+export async function revokeInvite(tenantId: string, id: string, actorUserId: string) {
   const invite = await prisma.invite.findUnique({ where: { id } });
   if (!invite || invite.tenantId !== tenantId) throw new NotFoundError("Invite not found");
   if (invite.status !== "PENDING") throw new BadRequestError("Only a pending invite can be revoked");
 
   await prisma.invite.update({ where: { id }, data: { status: "REVOKED" } });
+  await logAudit({
+    tenantId,
+    actorUserId,
+    action: "invite.revoked",
+    entity: "Invite",
+    entityId: id,
+    meta: { email: invite.email, role: invite.role },
+  });
 }
 
 async function loadPendingInvite(token: string) {
@@ -104,6 +122,14 @@ export async function acceptInvite(token: string, input: AcceptInviteInput) {
     : await acceptAsNewUser(invite.email, invite.role, invite.tenantId, input);
 
   await prismaUnscoped.invite.update({ where: { id: invite.id }, data: { status: "ACCEPTED", acceptedAt: new Date() } });
+  await logAudit({
+    tenantId: invite.tenantId,
+    actorUserId: user.id,
+    action: "invite.accepted",
+    entity: "Membership",
+    entityId: user.id,
+    meta: { email: invite.email, role: invite.role },
+  });
 
   const tokens = issueTokens(user);
   const tenantSlug = await getPrimaryTenantSlug(user.id);

@@ -25,12 +25,6 @@ async function upsertMembership(userId: string, tenantId: string, role: "OWNER" 
 }
 
 async function main() {
-  const mainLocation = await prisma.location.upsert({
-    where: { id: "default-clinic" },
-    update: {},
-    create: { id: "default-clinic", name: "Klinika Kryesore" },
-  });
-
   // Demo tenant every seeded account belongs to. Real production data gets
   // backfilled into the same kind of tenant by a later migration; here it's
   // created directly since seed data is disposable/idempotent.
@@ -38,6 +32,30 @@ async function main() {
     where: { slug: "demo-clinic" },
     update: {},
     create: { id: "demo-clinic", name: "Dentixa Demo Clinic", slug: "demo-clinic", timezone: "Europe/Belgrade" },
+  });
+
+  // Created before the tenant existed, only ever worked because this upsert
+  // always hit the (no-op) update branch on a DB that already had the row —
+  // Prisma still validates the create branch's shape either way, and Location
+  // has required tenantId since Milestone 1, so this always throws on a truly
+  // fresh database. Fixed by moving the tenant upsert above and referencing it.
+  const mainLocation = await prisma.location.upsert({
+    where: { id: "default-clinic" },
+    update: {},
+    create: { id: "default-clinic", name: "Klinika Kryesore", tenantId: demoTenant.id },
+  });
+
+  const superAdminPasswordHash = await bcrypt.hash("superadmin123", SALT_ROUNDS);
+  await prisma.user.upsert({
+    where: { email: "superadmin@dentixa.com" },
+    update: { isSuperAdmin: true },
+    create: {
+      name: "Platform Super Admin",
+      email: "superadmin@dentixa.com",
+      passwordHash: superAdminPasswordHash,
+      role: "ADMIN",
+      isSuperAdmin: true,
+    },
   });
 
   const adminPasswordHash = await bcrypt.hash("admin123", SALT_ROUNDS);
@@ -78,6 +96,7 @@ async function main() {
     // Monday(1) - Friday(5), 09:00-17:00
     await prisma.doctorSchedule.createMany({
       data: [1, 2, 3, 4, 5].map((dayOfWeek) => ({
+        tenantId: demoTenant.id,
         doctorId: doctor.id,
         dayOfWeek,
         startTime: "09:00",
@@ -108,11 +127,12 @@ async function main() {
     { name: "Whitening", durationMinutes: 60, price: 80 },
   ];
   for (const service of services) {
-    const existing = await prisma.clinicService.findFirst({ where: { name: service.name } });
-    if (!existing) await prisma.clinicService.create({ data: service });
+    const existing = await prisma.clinicService.findFirst({ where: { tenantId: demoTenant.id, name: service.name } });
+    if (!existing) await prisma.clinicService.create({ data: { ...service, tenantId: demoTenant.id } });
   }
 
   console.log("Seed complete:");
+  console.log("  Super Admin: superadmin@dentixa.com / superadmin123");
   console.log("  Admin:   admin@dentixa.com / admin123");
   console.log("  Doctors: elira@dentixa.com, arben@dentixa.com / doctor123");
   console.log("  Patient: patient@dentixa.com / patient123");

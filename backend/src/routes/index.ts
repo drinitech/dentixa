@@ -11,12 +11,14 @@ import { locationRouter } from "./location.routes";
 import { recallRouter } from "./recall.routes";
 import { inviteRouter } from "./invite.routes";
 import { publicRouter } from "./public.routes";
+import { superAdminRouter } from "./superAdmin.routes";
 
 export const router = Router();
 
 router.use("/auth", authRouter);
 router.use("/invites", inviteRouter);
 router.use("/public", publicRouter);
+router.use("/super-admin", superAdminRouter);
 router.use("/appointments", appointmentRouter);
 router.use("/schedule", scheduleRouter);
 router.use("/services", serviceRouter);

@@ -14,7 +14,7 @@ export const listInvitesHandler = asyncHandler(async (req: Request, res: Respons
 });
 
 export const revokeInviteHandler = asyncHandler(async (req: Request, res: Response) => {
-  await inviteService.revokeInvite(req.tenantId!, req.params.id);
+  await inviteService.revokeInvite(req.tenantId!, req.params.id, req.user!.id);
   res.status(204).send();
 });
 

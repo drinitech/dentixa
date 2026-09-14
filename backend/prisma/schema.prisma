@@ -89,6 +89,7 @@ model Tenant {
 
   memberships        Membership[]
   invites            Invite[]
+  auditLogs          AuditLog[]
   locations          Location[]
   services           ClinicService[]
   doctorSchedules    DoctorSchedule[]
@@ -145,12 +146,40 @@ model Invite {
   @@index([email])
 }
 
+// Who changed what and when, for staff/settings/platform actions — the
+// scope doc's audit-log requirement. Always tenant-scoped (every event is
+// "about" some clinic) but deliberately NOT in TENANT_SCOPED_MODELS: a
+// super-admin action (suspend/change-plan) targets an arbitrary tenant by id
+// with no resolved tenant context to auto-inject from, so every write here
+// passes tenantId explicitly via auditLog.service.ts's logAudit(), the same
+// way Membership rows are created explicitly rather than relying on the
+// extension. Appointment-level actions (approve/reject/cancel) aren't
+// instrumented yet — deferred, see auditLog.service.ts.
+model AuditLog {
+  id          String   @id @default(cuid())
+  tenantId    String
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  actorUserId String
+  actor       User     @relation("AuditActor", fields: [actorUserId], references: [id], onDelete: Cascade)
+  action      String
+  entity      String
+  entityId    String?
+  meta        Json?
+  createdAt   DateTime @default(now())
+
+  @@index([tenantId, createdAt])
+}
+
 model User {
   id           String   @id @default(cuid())
   name         String
   email        String   @unique
   passwordHash String
   role         Role     @default(PATIENT)
+  // Platform operator, not scoped to any tenant/Membership — can list every
+  // clinic, change plans, suspend clinics. Provisioned only via prisma/seed.ts
+  // or a direct DB write; there's no self-service signup for this.
+  isSuperAdmin Boolean  @default(false)
   phone        String?
   // Doctor-only, self-set (e.g. "Orthodontist") — null/ignored for other roles.
   specialty    String?
@@ -191,6 +220,7 @@ model User {
   recallsAsPatient        RecallReminder[]          @relation("PatientRecalls")
   recallsAsDoctor         RecallReminder[]          @relation("DoctorRecalls")
   invitesSent             Invite[]                  @relation("InvitesSent")
+  auditLogEntries         AuditLog[]                @relation("AuditActor")
 
   @@index([role])
   @@index([locationId])

@@ -5,6 +5,7 @@ import { prisma, prismaUnscoped } from "../lib/prisma";
 import { NotFoundError } from "../errors/NotFoundError";
 import { BadRequestError } from "../errors/BadRequestError";
 import { seedDefaultNotificationPreferences } from "./notification.service";
+import { logAudit } from "./auditLog.service";
 import type { CreateDoctorInput, UpdateDoctorInput, ListUsersQuery } from "../validations/admin.schema";
 
 const SALT_ROUNDS = 12;
@@ -40,7 +41,7 @@ async function requireMembership(tenantId: string, userId: string, role?: Member
   return membership;
 }
 
-export async function createDoctor(tenantId: string, input: CreateDoctorInput) {
+export async function createDoctor(tenantId: string, input: CreateDoctorInput, actorUserId: string) {
   const existing = await prisma.user.findUnique({ where: { email: input.email } });
   if (existing) throw new BadRequestError("An account with this email already exists");
 
@@ -64,6 +65,14 @@ export async function createDoctor(tenantId: string, input: CreateDoctorInput) {
   });
   await seedDefaultNotificationPreferences(doctor.id);
   await prismaUnscoped.membership.create({ data: { userId: doctor.id, tenantId, role: "DOCTOR" } });
+  await logAudit({
+    tenantId,
+    actorUserId,
+    action: "doctor.created",
+    entity: "User",
+    entityId: doctor.id,
+    meta: { name: doctor.name, email: doctor.email },
+  });
   return doctor;
 }
 
@@ -75,7 +84,7 @@ export async function listDoctors(tenantId: string) {
   });
 }
 
-export async function updateDoctor(tenantId: string, id: string, input: UpdateDoctorInput) {
+export async function updateDoctor(tenantId: string, id: string, input: UpdateDoctorInput, actorUserId: string) {
   await requireMembership(tenantId, id, "DOCTOR");
 
   if (input.email) {
@@ -90,7 +99,7 @@ export async function updateDoctor(tenantId: string, id: string, input: UpdateDo
     if (!location) throw new BadRequestError("Selected location does not exist");
   }
 
-  return prisma.user.update({
+  const doctor = await prisma.user.update({
     where: { id },
     data: {
       ...input,
@@ -99,6 +108,15 @@ export async function updateDoctor(tenantId: string, id: string, input: UpdateDo
     },
     select: PUBLIC_USER_SELECT,
   });
+  await logAudit({
+    tenantId,
+    actorUserId,
+    action: "doctor.updated",
+    entity: "User",
+    entityId: id,
+    meta: input,
+  });
+  return doctor;
 }
 
 export async function getDoctorServices(tenantId: string, doctorId: string) {
@@ -154,15 +172,23 @@ export async function listUsers(tenantId: string, query: ListUsersQuery) {
   return { users, total, page: query.page, pageSize: query.pageSize };
 }
 
-export async function setUserActive(tenantId: string, id: string, isActive: boolean) {
+export async function setUserActive(tenantId: string, id: string, isActive: boolean, actorUserId: string) {
   const membership = await requireMembership(tenantId, id);
   if (membership.role === "OWNER") throw new BadRequestError("Cannot ban an owner account");
 
-  return prisma.user.update({
+  const user = await prisma.user.update({
     where: { id },
     data: { isActive, tokenVersion: { increment: 1 } },
     select: PUBLIC_USER_SELECT,
   });
+  await logAudit({
+    tenantId,
+    actorUserId,
+    action: isActive ? "user.unbanned" : "user.banned",
+    entity: "User",
+    entityId: id,
+  });
+  return user;
 }
 
 // Permanently removes the user. Cascades (schema-level onDelete: Cascade) to
