@@ -8,6 +8,7 @@ import { ConflictError } from "../errors/ConflictError";
 import { getFreeSlots } from "./slot.service";
 import { scheduleRecall, markRecallsBooked } from "./recall.service";
 import { rangesOverlap, timeToMinutes } from "../lib/time";
+import { assertAppointmentLimit } from "./planLimits.service";
 import type {
   CreateAppointmentInput,
   ListAppointmentsQuery,
@@ -26,6 +27,8 @@ const appointmentInclude = {
 } satisfies Prisma.AppointmentInclude;
 
 export async function createAppointment(patientId: string, input: CreateAppointmentInput) {
+  await assertAppointmentLimit();
+
   const doctor = await prisma.user.findUnique({
     where: { id: input.doctorId },
     include: { offeredServices: { select: { id: true } } },

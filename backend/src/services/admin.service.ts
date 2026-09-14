@@ -6,6 +6,7 @@ import { NotFoundError } from "../errors/NotFoundError";
 import { BadRequestError } from "../errors/BadRequestError";
 import { seedDefaultNotificationPreferences } from "./notification.service";
 import { logAudit } from "./auditLog.service";
+import { assertDoctorLimit } from "./planLimits.service";
 import type { CreateDoctorInput, UpdateDoctorInput, ListUsersQuery } from "../validations/admin.schema";
 
 const SALT_ROUNDS = 12;
@@ -42,6 +43,8 @@ async function requireMembership(tenantId: string, userId: string, role?: Member
 }
 
 export async function createDoctor(tenantId: string, input: CreateDoctorInput, actorUserId: string) {
+  await assertDoctorLimit(tenantId);
+
   const existing = await prisma.user.findUnique({ where: { email: input.email } });
   if (existing) throw new BadRequestError("An account with this email already exists");
 

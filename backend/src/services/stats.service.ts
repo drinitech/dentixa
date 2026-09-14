@@ -1,5 +1,6 @@
 import { prisma } from "../lib/prisma";
 import { getTenantId } from "../lib/tenantContext";
+import { FREE_DOCTOR_LIMIT, FREE_MONTHLY_APPOINTMENT_LIMIT } from "./planLimits.service";
 
 function startOfWeek(): Date {
   const now = new Date();
@@ -33,8 +34,11 @@ export async function getAdminStats(tenantId: string) {
   const today = startOfToday();
   const tomorrow = new Date(today.getTime() + 24 * 60 * 60 * 1000);
   const weekStart = startOfWeek();
+  const monthStart = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), 1));
+  const nextMonthStart = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth() + 1, 1));
 
   const [
+    tenant,
     totalAppointments,
     byStatusRaw,
     perDoctorRaw,
@@ -45,7 +49,11 @@ export async function getAdminStats(tenantId: string) {
     noShowCount,
     serviceCountsRaw,
     revenueRaw,
+    // Same "created this calendar month" counting as planLimits.service.ts's
+    // assertAppointmentLimit — this is the usage number that check enforces.
+    appointmentsThisMonth,
   ] = await Promise.all([
+    prisma.tenant.findUniqueOrThrow({ where: { id: tenantId } }),
     prisma.appointment.count(),
     prisma.appointment.groupBy({ by: ["status"], _count: { _all: true } }),
     prisma.appointment.groupBy({ by: ["doctorId", "status"], _count: { _all: true } }),
@@ -78,6 +86,7 @@ export async function getAdminStats(tenantId: string) {
       JOIN "ClinicService" cs ON cs.id = a."serviceId"
       WHERE a."tenantId" = ${getTenantId()} AND a.status = 'DONE'
     `,
+    prisma.appointment.count({ where: { createdAt: { gte: monthStart, lt: nextMonthStart } } }),
   ]);
 
   // User isn't tenant-scoped by the extension, so this filters via Membership explicitly.
@@ -118,5 +127,10 @@ export async function getAdminStats(tenantId: string) {
     noShowRate,
     topServices,
     estimatedRevenue: Number(revenueRaw[0]?.revenue ?? 0),
+    plan: tenant.plan,
+    doctorCount: doctors.length,
+    doctorLimit: tenant.plan === "FREE" ? FREE_DOCTOR_LIMIT : null,
+    appointmentsThisMonth,
+    appointmentMonthlyLimit: tenant.plan === "FREE" ? FREE_MONTHLY_APPOINTMENT_LIMIT : null,
   };
 }

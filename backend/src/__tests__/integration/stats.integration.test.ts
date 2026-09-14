@@ -118,6 +118,16 @@ describe("admin dashboard stats", () => {
     // Revenue: 3 * $50 (cleaning) + 1 * $100 (whitening) = $250. The
     // PENDING/NO_SHOW appointments contribute nothing.
     expect(stats.estimatedRevenue).toBe(250);
+
+    // Plan info (Milestone 7): fresh tenant is Free, 1 doctor seeded in
+    // beforeAll, 6 appointments created this month (all but the far-future one).
+    expect(stats).toMatchObject({
+      plan: "FREE",
+      doctorCount: 1,
+      doctorLimit: 1,
+      appointmentsThisMonth: 6,
+      appointmentMonthlyLimit: 100,
+    });
   });
 
   it("a fresh tenant with no appointments gets zeroed stats, not errors", async () => {
