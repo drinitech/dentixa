@@ -30,14 +30,14 @@ export async function runReminderSweep() {
 
   const appointments = await prisma.appointment.findMany({
     where: { date: tomorrowDateOnly, status: "APPROVED", reminderSentAt: null },
-    include: { patient: { select: { id: true } } },
+    include: { patient: { select: { id: true } }, tenant: { select: { name: true } } },
   });
 
   for (const appt of appointments) {
     await notify(appt.patientId, "REMINDER", {
-      subject: "Appointment reminder",
-      emailBody: `Reminder: you have an appointment tomorrow at ${appt.time}.`,
-      smsBody: `Dentixa reminder: appointment tomorrow at ${appt.time}.`,
+      subject: `[${appt.tenant.name}] Appointment reminder`,
+      emailBody: `Reminder: you have an appointment at ${appt.tenant.name} tomorrow at ${appt.time}.`,
+      smsBody: `${appt.tenant.name} reminder: appointment tomorrow at ${appt.time}.`,
     });
     await prisma.appointment.update({ where: { id: appt.id }, data: { reminderSentAt: new Date() } });
   }

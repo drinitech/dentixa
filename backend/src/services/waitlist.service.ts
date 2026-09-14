@@ -5,7 +5,7 @@ import { ForbiddenError } from "../errors/ForbiddenError";
 import { ConflictError } from "../errors/ConflictError";
 import { BadRequestError } from "../errors/BadRequestError";
 import { getFreeSlots } from "./slot.service";
-import { sendEmail } from "./notification.service";
+import { sendEmail, getCurrentClinicName } from "./notification.service";
 import { getTenantId } from "../lib/tenantContext";
 import type { JoinWaitlistInput } from "../validations/waitlist.schema";
 
@@ -74,6 +74,8 @@ export async function notifyWaitlistIfSlotsOpened(doctorId: string, date: string
   });
   if (entries.length === 0) return;
 
+  const clinicName = await getCurrentClinicName();
+
   for (const entry of entries) {
     try {
       const freeSlots = await getFreeSlots(doctorId, date, entry.serviceId);
@@ -81,8 +83,8 @@ export async function notifyWaitlistIfSlotsOpened(doctorId: string, date: string
 
       await sendEmail(
         entry.patient.email,
-        "A slot just opened up",
-        `<p>Good news — a slot opened up with Dr. ${entry.doctor.name} on ${date} for ${entry.service.name}. Log in to Dentixa to book it before it's taken.</p>`,
+        `[${clinicName}] A slot just opened up`,
+        `<p>Good news — a slot opened up with Dr. ${entry.doctor.name} on ${date} for ${entry.service.name} at ${clinicName}. Log in to book it before it's taken.</p>`,
       );
       await prisma.waitlist.delete({ where: { id: entry.id } });
     } catch {

@@ -3,6 +3,7 @@ import type { Transporter } from "nodemailer";
 import twilio from "twilio";
 import { prisma } from "../lib/prisma";
 import { logger } from "../lib/logger";
+import { getTenantId } from "../lib/tenantContext";
 import type { NotificationChannel, NotificationEventType } from "@prisma/client";
 
 const EVENT_TYPES: NotificationEventType[] = [
@@ -27,6 +28,17 @@ export async function seedDefaultNotificationPreferences(userId: string) {
     })),
   );
   await prisma.notificationPreference.createMany({ data: rows, skipDuplicates: true });
+}
+
+// Tenant isn't tenant-scoped by the Prisma extension (it's the thing being
+// looked up, not a row that belongs to one), so this is a plain query — for
+// any handler that has already gone through resolveTenant. Only for request-
+// driven call sites; the cross-tenant cron jobs (reminder.job.ts,
+// recall.job.ts) instead `include: { tenant: { select: { name: true } } }`
+// on their own per-tenant rows, since they have no single tenant context to read.
+export async function getCurrentClinicName(): Promise<string> {
+  const tenant = await prisma.tenant.findUnique({ where: { id: getTenantId() }, select: { name: true } });
+  return tenant?.name ?? "Dentixa";
 }
 
 let cachedTransporter: Transporter | null | undefined;

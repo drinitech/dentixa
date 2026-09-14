@@ -17,7 +17,7 @@ export async function runRecallSweep() {
 
   const due = await prisma.recallReminder.findMany({
     where: { status: "PENDING", dueDate: { lte: today } },
-    include: { service: { select: { name: true } } },
+    include: { service: { select: { name: true } }, tenant: { select: { name: true } } },
   });
 
   for (const recall of due) {
@@ -25,9 +25,9 @@ export async function runRecallSweep() {
     // new event type + preferences UI just for this — same email/SMS toggle
     // a patient already uses for appointment reminders.
     await notify(recall.patientId, "REMINDER", {
-      subject: "Time for your checkup",
-      emailBody: `It's been a while since your last ${recall.service.name.toLowerCase()} — you're due for another. Book your next appointment when you're ready.`,
-      smsBody: `Dentixa: you're due for a ${recall.service.name} checkup — book your next visit.`,
+      subject: `[${recall.tenant.name}] Time for your checkup`,
+      emailBody: `It's been a while since your last ${recall.service.name.toLowerCase()} at ${recall.tenant.name} — you're due for another. Book your next appointment when you're ready.`,
+      smsBody: `${recall.tenant.name}: you're due for a ${recall.service.name} checkup — book your next visit.`,
     });
     await prisma.recallReminder.update({
       where: { id: recall.id },

@@ -1,18 +1,19 @@
 import type { Request, Response } from "express";
 import { asyncHandler } from "../lib/asyncHandler";
 import * as appointmentService from "../services/appointment.service";
-import { notify } from "../services/notification.service";
+import { notify, getCurrentClinicName } from "../services/notification.service";
 import { notifyWaitlistIfSlotsOpened } from "../services/waitlist.service";
 import { buildAppointmentsWorkbook } from "../lib/excel";
 import { BadRequestError } from "../errors/BadRequestError";
 
 export const createHandler = asyncHandler(async (req: Request, res: Response) => {
   const appt = await appointmentService.createAppointment(req.user!.id, req.body);
+  const clinicName = await getCurrentClinicName();
 
   await notify(appt.doctorId, "APPOINTMENT_CREATED", {
-    subject: "New appointment request",
+    subject: `[${clinicName}] New appointment request`,
     emailBody: `You have a new appointment request from ${appt.patient.name} on ${appt.date.toISOString().slice(0, 10)} at ${appt.time}.`,
-    smsBody: `Dentixa: new appointment request from ${appt.patient.name} on ${appt.date.toISOString().slice(0, 10)} at ${appt.time}.`,
+    smsBody: `${clinicName}: new appointment request from ${appt.patient.name} on ${appt.date.toISOString().slice(0, 10)} at ${appt.time}.`,
   });
 
   res.status(201).json({ appointment: appt });
@@ -35,18 +36,19 @@ export const approveHandler = asyncHandler(async (req: Request, res: Response) =
     req.params.id,
     req.user!.id,
   );
+  const clinicName = await getCurrentClinicName();
 
   await notify(appointment.patientId, "APPOINTMENT_APPROVED", {
-    subject: "Your appointment was approved",
-    emailBody: `Your appointment on ${appointment.date.toISOString().slice(0, 10)} at ${appointment.time} was approved.`,
-    smsBody: `Dentixa: your appointment on ${appointment.date.toISOString().slice(0, 10)} at ${appointment.time} was approved.`,
+    subject: `[${clinicName}] Your appointment was approved`,
+    emailBody: `Your appointment at ${clinicName} on ${appointment.date.toISOString().slice(0, 10)} at ${appointment.time} was approved.`,
+    smsBody: `${clinicName}: your appointment on ${appointment.date.toISOString().slice(0, 10)} at ${appointment.time} was approved.`,
   });
 
   for (const rejected of autoRejected) {
     await notify(rejected.patientId, "APPOINTMENT_REJECTED", {
-      subject: "Your appointment request could not be confirmed",
+      subject: `[${clinicName}] Your appointment request could not be confirmed`,
       emailBody: "Unfortunately another patient's appointment was approved for the same time slot. Please request a different time.",
-      smsBody: "Dentixa: your requested slot was just taken by another patient. Please pick a new time.",
+      smsBody: `${clinicName}: your requested slot was just taken by another patient. Please pick a new time.`,
     });
   }
 
@@ -59,11 +61,12 @@ export const rejectHandler = asyncHandler(async (req: Request, res: Response) =>
     req.user!.id,
     req.body?.rejectionReason,
   );
+  const clinicName = await getCurrentClinicName();
 
   await notify(appt.patientId, "APPOINTMENT_REJECTED", {
-    subject: "Your appointment request was declined",
-    emailBody: `Your appointment request on ${appt.date.toISOString().slice(0, 10)} at ${appt.time} was declined.${appt.rejectionReason ? ` Reason: ${appt.rejectionReason}` : ""}`,
-    smsBody: `Dentixa: your appointment request on ${appt.date.toISOString().slice(0, 10)} at ${appt.time} was declined.`,
+    subject: `[${clinicName}] Your appointment request was declined`,
+    emailBody: `Your appointment request at ${clinicName} on ${appt.date.toISOString().slice(0, 10)} at ${appt.time} was declined.${appt.rejectionReason ? ` Reason: ${appt.rejectionReason}` : ""}`,
+    smsBody: `${clinicName}: your appointment request on ${appt.date.toISOString().slice(0, 10)} at ${appt.time} was declined.`,
   });
   await notifyWaitlistIfSlotsOpened(appt.doctorId, appt.date.toISOString().slice(0, 10));
 
